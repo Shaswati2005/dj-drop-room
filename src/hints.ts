@@ -32,7 +32,7 @@ const FIXED: Record<string, Hint> = {
   'Xf End': { title: 'AUTO FADE', body: 'Glide the crossfader to this side over 4 bars' },
   'Fx Echo': { title: 'ECHO', body: 'Echo on the whole mix · tap again to stop' },
   'Fx Space': { title: 'SPACE', body: 'Big reverb on the whole mix' },
-  Drop: { title: 'DROP', body: 'Coming soon' },
+  Drop: { title: 'DROP', body: 'Build-up, then the drop on the next bar' },
 };
 
 /** The hint for a control entity name (e.g. "Hi A", "Pad B 6"); pads depend

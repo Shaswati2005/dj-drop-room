@@ -337,19 +337,71 @@ export class Deck {
       return;
     }
     const target = this.hotCues[index];
-    if (this.userLoop != null && (target < this.userLoop.start || target >= this.userLoop.end)) {
+    if (!this.isPlaying) {
+      this.jump(target, now, now);
+      return;
+    }
+    let at = this.nextBeatTime(now);
+    if (at - now < 0.02) at = this.nextBeatTime(at + 0.001);
+    this.jump(target, at, now);
+  }
+
+  /** Jump the playhead to `pos` at audio time `at`, leaving a user loop the
+   * target is outside of. */
+  jump(pos: number, at: number, now: number): void {
+    if (this.userLoop != null && (pos < this.userLoop.start || pos >= this.userLoop.end)) {
       this.reanchor(now);
       this.userLoop = null;
       this.loopBars = 0;
       this.applyRegion();
     }
     if (!this.isPlaying) {
-      this.anchorPos = target;
+      this.anchorPos = pos;
       return;
     }
-    let at = this.nextBeatTime(now);
-    if (at - now < 0.02) at = this.nextBeatTime(at + 0.001);
-    this.seek(target, at);
+    this.seek(pos, at);
+  }
+
+  /** Track bar where a DROP pressed at `time` lands: the start of the next drop
+   * section, or of the current one (a re-drop), or the first drop when none is
+   * left ahead. */
+  dropBar(time: number): number {
+    if (this.track == null) return 0;
+    const bar = Math.floor(this.position(time) / this.barSeconds);
+    let start = 0;
+    let first = -1;
+    let next = -1;
+    for (const part of this.track.form) {
+      if (part.section === 'drop') {
+        if (first < 0) first = start;
+        if (next < 0 && bar < start + part.bars) next = start;
+      }
+      start += part.bars;
+    }
+    return next >= 0 ? next : Math.max(0, first);
+  }
+
+  /** The DROP's gap: drums and bass drop out from `from` to `to`. */
+  gap(from: number, to: number): void {
+    for (const i of [0, 1]) {
+      if (!this.stemOn[i]) continue;
+      const g = this.stemGains[i].gain;
+      g.setValueAtTime(1, from - 0.01);
+      g.linearRampToValueAtTime(0, from);
+      g.setValueAtTime(0, to - 0.004);
+      g.linearRampToValueAtTime(1, to);
+    }
+  }
+
+  /** Every stem on from `at` (the drop lands at full strength). */
+  allStemsOn(at: number, now: number): void {
+    for (let i = 0; i < 4; i++) {
+      this.stemArmed[i] = false;
+      if (this.stemOn[i]) continue;
+      this.stemOn[i] = true;
+      this.stemGains[i].gain.rampTo(1, 0.004, at);
+      this.stems[i].set(true, at, now);
+    }
   }
 
   deleteHotCue(index: number): void {

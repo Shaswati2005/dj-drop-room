@@ -1,6 +1,7 @@
 import * as Tone from 'tone';
 import { Deck, HOT_CUES, LOOP_BARS, TEMPO_RANGE } from './deck.js';
 import type { DeckId } from './deck.js';
+import { DropFx } from './drop.js';
 import { Master } from './master.js';
 import { Channel, clamp, crossfadeGains, MasterFx } from './mixer.js';
 import type { Band } from './mixer.js';
@@ -66,6 +67,15 @@ export interface EngineState {
   fadingTo: DeckId | '';
   echo: boolean;
   space: boolean;
+  /** DROP: riser start and landing (audio times, as heard; 0 = none yet) and
+   * how many drops have landed */
+  dropFrom: number;
+  dropAt: number;
+  drops: number;
+  /** a DROP is rising toward its downbeat */
+  dropping: boolean;
+  /** audio time being heard, for visuals keyed to dropFrom/dropAt */
+  heard: number;
   A: DeckView;
   B: DeckView;
 }
@@ -108,6 +118,7 @@ const KILL_BANDS: readonly Band[] = ['high', 'mid', 'low'];
 export class Engine {
   readonly master: Master;
   readonly fx: MasterFx;
+  readonly dropFx: DropFx;
   readonly decks: Record<DeckId, Deck>;
   readonly channels: Record<DeckId, Channel>;
   readonly padModes: Record<DeckId, PadMode> = { A: 'stems', B: 'stems' };
@@ -124,6 +135,11 @@ export class Engine {
     fadingTo: '',
     echo: false,
     space: false,
+    dropFrom: 0,
+    dropAt: 0,
+    drops: 0,
+    dropping: false,
+    heard: 0,
     A: deckView(),
     B: deckView(),
   };
@@ -132,6 +148,9 @@ export class Engine {
   private crossfader = 0;
   private fade: { from: number; to: number; start: number; seconds: number } | null = null;
   private preloaded: Promise<void> | null = null;
+  private dropFrom = 0;
+  private dropAt = 0;
+  private dropsScheduled = 0;
   private readonly tick = () => {
     const now = this.context.currentTime;
     const heard = this.audibleTime();
@@ -147,6 +166,7 @@ export class Engine {
   constructor(readonly context: Tone.BaseContext) {
     this.master = new Master(context);
     this.fx = new MasterFx(context, this.master.input);
+    this.dropFx = new DropFx(context, this.master.input);
     this.decks = { A: new Deck(context, 'A'), B: new Deck(context, 'B') };
     this.channels = { A: new Channel(context), B: new Channel(context) };
     for (const id of ['A', 'B'] as const) {
@@ -351,6 +371,28 @@ export class Engine {
     this.fx.toggleSpace();
   }
 
+  /** DROP (PLAN §3.5) on the master deck: a riser now; drums and bass gap on
+   * the last beat; on the downbeat the deck lands on the start of its next
+   * drop section (or re-drops the one it is in) with every stem on. The
+   * downbeat is the next bar, or the one after when under 2 beats are left. */
+  drop(): void {
+    const deck = this.masterDeck();
+    const now = this.context.currentTime;
+    if (!deck.isRunning || deck.track == null || now < this.dropAt) return;
+    const beat = 60 / deck.bpm;
+    let at = deck.nextBarTime(now);
+    if (at - now < 2 * beat) at = deck.nextBarTime(at + 0.001);
+    const land = deck.dropBar(at) * deck.barSeconds;
+    for (const d of [this.decks.A, this.decks.B]) if (d.isRunning) d.gap(at - beat, at);
+    deck.jump(land, at, now);
+    deck.allStemsOn(at, this.audibleTime());
+    this.dropFx.riser(now, at);
+    this.dropFx.impact(at, 8 * beat);
+    this.dropFrom = now;
+    this.dropAt = at;
+    this.dropsScheduled++;
+  }
+
   click(high = true): void {
     if (this.state.running) this.master.click(high);
   }
@@ -368,6 +410,11 @@ export class Engine {
     s.fadingTo = this.fade == null ? '' : this.fade.to < 0 ? 'A' : 'B';
     s.echo = this.fx.echo;
     s.space = this.fx.space;
+    s.heard = heard;
+    s.dropFrom = this.dropFrom;
+    s.dropAt = this.dropAt;
+    s.dropping = heard < this.dropAt;
+    s.drops = this.dropsScheduled - (s.dropping ? 1 : 0);
     if (master.track != null) {
       const beats = master.position(heard) / (master.barSeconds / 4);
       s.bar = Math.floor(beats / 4);
@@ -414,6 +461,7 @@ export class Engine {
       this.channels[id].dispose();
     }
     this.fx.dispose();
+    this.dropFx.dispose();
     this.master.dispose();
   }
 }

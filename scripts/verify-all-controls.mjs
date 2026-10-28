@@ -152,10 +152,8 @@ press('Xf End B');
 check('crossfader B-end glides to deck B', until(() => music().crossfader > 0.95, 10), `x = ${music().crossfader.toFixed(2)}`);
 press('Xf End A');
 check('crossfader A-end glides back to deck A', until(() => music().crossfader < -0.95, 10), `x = ${music().crossfader.toFixed(2)}`);
-const m0 = music();
 press('Drop');
-const m1 = music();
-check('DROP is inert until Day 7 (nothing breaks)', m1.playingA === m0.playingA && m1.playingB === m0.playingB, '(by design)');
+check('DROP charges (riser) and then lands', until(() => lit('Drop'), 3) && until(() => !values('Drop', 'PushButton').armed, 8));
 
 // ── knobs: press and slide right 1.5 cm, then tap ──
 for (const deck of ['A', 'B']) {

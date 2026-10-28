@@ -70,6 +70,7 @@ export default async function run({ page, frame }) {
 
   // crossfader: all the way to B (paused) silences the output
   await e(() => window.__dropRoom.engine().setCrossfader(1));
+  await wait(400); // let the meter fall
   const master = await level('master', 600);
   check('crossfader at B with only A playing → master silent', master < 0.02, master.toFixed(4));
   await e(() => window.__dropRoom.engine().fadeTo('A'));

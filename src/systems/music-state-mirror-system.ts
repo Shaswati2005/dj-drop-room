@@ -127,12 +127,13 @@ export class MusicStateMirrorSystem extends createSystem({
         lit = s.fadingTo === (view === s.A ? 'A' : 'B') || (view === s.A ? s.crossfader <= -0.99 : s.crossfader >= 0.99);
         break;
       case ButtonActions.drop:
-        lit = false;
+        // charged while the riser builds, and for a bar after it lands
+        lit = s.dropping || (s.drops > 0 && s.heard - s.dropAt < 240 / s.bpm);
         break;
       default:
         lit = view.playing;
     }
     entity.setValue(PushButton, 'lit', lit);
-    entity.setValue(PushButton, 'armed', action === ButtonActions.play && view.playArmed);
+    entity.setValue(PushButton, 'armed', (action === ButtonActions.play && view.playArmed) || (action === ButtonActions.drop && s.dropping));
   }
 }

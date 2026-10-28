@@ -1,5 +1,6 @@
 import { defineAssets } from '@iwsdk/core';
 import { createConsoleBody } from './scene-assets/console-body.scene-asset.js';
+import { createLightRig } from './scene-assets/light-rig.scene-asset.js';
 import {
   createChannelFaderCap,
   createCrossfaderCap,
@@ -39,4 +40,5 @@ export default defineAssets({
   'tempo-fader-cap': createTempoFaderCap(),
   'crossfader-cap': createCrossfaderCap(),
   'start-pad': createStartPad(),
+  'light-rig': createLightRig(),
 });

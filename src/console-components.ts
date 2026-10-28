@@ -65,6 +65,14 @@ export const ConsoleRoot = createComponent('ConsoleRoot', {
   below: { type: Types.Float32, default: 0.45, help: 'Distance below the head (m)' },
 });
 
+/** The light rig: hidden until the first DROP, then hung above the console. */
+export const LightRig = createComponent('LightRig', {
+  height: { type: Types.Float32, default: 0.95, help: 'Ring height above the console (m)' },
+  beyond: { type: Types.Float32, default: 0.5, help: 'Ring centre past the console, away from the player (m)' },
+  maxDim: { type: Types.Float32, default: 0.7, help: 'Room dimming at the peak of a riser, 0..1' },
+  settleDim: { type: Types.Float32, default: 0.35, help: 'Room dimming after a drop has landed' },
+});
+
 /** Singleton mirror of what the audio engine believes, for tests and the show. */
 export const MusicState = createComponent('MusicState', {
   audioRunning: { type: Types.Boolean, default: false },

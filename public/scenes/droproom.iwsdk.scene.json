@@ -1454,6 +1454,29 @@
           "intensity": 0.5
         }
       }
+    },
+    {
+      "id": "light-rig",
+      "name": "Light Rig",
+      "content": {
+        "type": "asset",
+        "asset": "light-rig"
+      },
+      "transform": {
+        "position": [
+          0,
+          1.5,
+          -0.67
+        ]
+      },
+      "components": {
+        "LightRig": {
+          "height": 0.95,
+          "beyond": 0.5,
+          "maxDim": 0.7,
+          "settleDim": 0.35
+        }
+      }
     }
   ]
 }
