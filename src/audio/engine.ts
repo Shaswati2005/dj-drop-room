@@ -393,6 +393,16 @@ export class Engine {
     this.dropsScheduled++;
   }
 
+  /** Session paused (headset off, system menu): freeze the audio clock, so
+   * every deck, fade and drop resumes exactly where it was. */
+  suspend(): void {
+    if (this.state.running) void (this.context.rawContext as AudioContext).suspend();
+  }
+
+  resume(): void {
+    if (this.state.running) void (this.context.rawContext as AudioContext).resume();
+  }
+
   click(high = true): void {
     if (this.state.running) this.master.click(high);
   }
