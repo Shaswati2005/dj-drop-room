@@ -48,8 +48,12 @@ export class MusicStateMirrorSystem extends createSystem({
         continue;
       }
       const view = entity.getValue(PushButton, 'deck') === 'B' ? s.B : s.A;
-      entity.setValue(PushButton, 'lit', view.playing);
-      entity.setValue(PushButton, 'armed', view.playArmed);
+      const other = view === s.A ? s.B : s.A;
+      const action = entity.getValue(PushButton, 'action');
+      // like a DJ media player: PLAY lit while playing, CUE lit while parked, SYNC lit when tempos match
+      const lit = action === ButtonActions.cue ? !view.playing : action === ButtonActions.sync ? other.playing && Math.abs(view.bpm - other.bpm) < 0.01 : view.playing;
+      entity.setValue(PushButton, 'lit', lit);
+      entity.setValue(PushButton, 'armed', action === ButtonActions.play && view.playArmed);
     }
   }
 }

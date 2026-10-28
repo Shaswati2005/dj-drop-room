@@ -2,7 +2,7 @@ import { createComponent, Types } from '@iwsdk/core';
 
 export const Decks = { A: 'A', B: 'B' } as const;
 export const StemNames = { drums: 'drums', bass: 'bass', chords: 'chords', melody: 'melody' } as const;
-export const ButtonActions = { play: 'play', start: 'start' } as const;
+export const ButtonActions = { play: 'play', cue: 'cue', sync: 'sync', start: 'start' } as const;
 
 /** A poke pad that toggles one stem of one deck on the next bar. */
 export const StemPad = createComponent('StemPad', {
@@ -18,6 +18,11 @@ export const PushButton = createComponent('PushButton', {
   deck: { type: Types.Enum, enum: Decks, default: Decks.A },
   lit: { type: Types.Boolean, default: false },
   armed: { type: Types.Boolean, default: false },
+});
+
+/** A jog wheel; its platter spins with the deck it belongs to. */
+export const JogWheel = createComponent('JogWheel', {
+  deck: { type: Types.Enum, enum: Decks, default: Decks.A },
 });
 
 /** The console root; placed in front of the player when XR starts. */

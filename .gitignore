@@ -39,3 +39,4 @@ pids/
 .iwsdk/
 
 .mcp.json
+artifacts/

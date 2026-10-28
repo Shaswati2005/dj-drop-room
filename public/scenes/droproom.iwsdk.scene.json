@@ -66,7 +66,7 @@
       "name": "Console",
       "content": {
         "type": "asset",
-        "asset": "console-frame"
+        "asset": "console-body"
       },
       "transform": {
         "position": [
@@ -88,296 +88,904 @@
       },
       "children": [
         {
-          "id": "deck-a",
-          "name": "Deck A",
+          "id": "jog-a",
+          "name": "Jog A",
           "content": {
-            "type": "group"
+            "type": "asset",
+            "asset": "jog-wheel-a"
           },
           "transform": {
             "position": [
-              -0.219,
-              0.03,
-              0.0265
-            ],
-            "rotationDeg": [
-              0,
-              15,
-              0
+              -0.2,
+              0.0416,
+              -0.045
             ]
           },
-          "children": [
-            {
-              "id": "pad-a-drums",
-              "name": "Pad A Drums",
-              "content": {
-                "type": "asset",
-                "asset": "pad-drums"
-              },
-              "transform": {
-                "position": [
-                  -0.03,
-                  0.018,
-                  -0.07
-                ]
-              },
-              "components": {
-                "StemPad": {
-                  "deck": "A",
-                  "stem": "drums",
-                  "active": true,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
-            },
-            {
-              "id": "pad-a-bass",
-              "name": "Pad A Bass",
-              "content": {
-                "type": "asset",
-                "asset": "pad-bass"
-              },
-              "transform": {
-                "position": [
-                  0.03,
-                  0.018,
-                  -0.07
-                ]
-              },
-              "components": {
-                "StemPad": {
-                  "deck": "A",
-                  "stem": "bass",
-                  "active": true,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
-            },
-            {
-              "id": "pad-a-chords",
-              "name": "Pad A Chords",
-              "content": {
-                "type": "asset",
-                "asset": "pad-chords"
-              },
-              "transform": {
-                "position": [
-                  -0.03,
-                  0.018,
-                  -0.01
-                ]
-              },
-              "components": {
-                "StemPad": {
-                  "deck": "A",
-                  "stem": "chords",
-                  "active": true,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
-            },
-            {
-              "id": "pad-a-melody",
-              "name": "Pad A Melody",
-              "content": {
-                "type": "asset",
-                "asset": "pad-melody"
-              },
-              "transform": {
-                "position": [
-                  0.03,
-                  0.018,
-                  -0.01
-                ]
-              },
-              "components": {
-                "StemPad": {
-                  "deck": "A",
-                  "stem": "melody",
-                  "active": true,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
-            },
-            {
-              "id": "play-a",
-              "name": "Play A",
-              "content": {
-                "type": "asset",
-                "asset": "play-button"
-              },
-              "transform": {
-                "position": [
-                  0.06,
-                  0.018,
-                  0.09
-                ]
-              },
-              "components": {
-                "PushButton": {
-                  "action": "play",
-                  "deck": "A",
-                  "lit": false,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
+          "components": {
+            "JogWheel": {
+              "deck": "A"
             }
-          ]
+          }
         },
         {
-          "id": "deck-b",
-          "name": "Deck B",
+          "id": "tempo-a",
+          "name": "Tempo A",
           "content": {
-            "type": "group"
+            "type": "asset",
+            "asset": "tempo-fader-cap"
           },
           "transform": {
             "position": [
-              0.219,
-              0.03,
-              0.0265
-            ],
-            "rotationDeg": [
-              0,
-              -15,
-              0
+              -0.285,
+              0.0416,
+              -0.05
+            ]
+          }
+        },
+        {
+          "id": "sync-a",
+          "name": "Sync A",
+          "content": {
+            "type": "asset",
+            "asset": "sync-button"
+          },
+          "transform": {
+            "position": [
+              -0.285,
+              0.05,
+              -0.128
             ]
           },
-          "children": [
-            {
-              "id": "pad-b-drums",
-              "name": "Pad B Drums",
-              "content": {
-                "type": "asset",
-                "asset": "pad-drums"
-              },
-              "transform": {
-                "position": [
-                  -0.03,
-                  0.018,
-                  -0.07
-                ]
-              },
-              "components": {
-                "StemPad": {
-                  "deck": "B",
-                  "stem": "drums",
-                  "active": true,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
+          "components": {
+            "PushButton": {
+              "action": "sync",
+              "deck": "A",
+              "lit": false,
+              "armed": false
             },
-            {
-              "id": "pad-b-bass",
-              "name": "Pad B Bass",
-              "content": {
-                "type": "asset",
-                "asset": "pad-bass"
-              },
-              "transform": {
-                "position": [
-                  0.03,
-                  0.018,
-                  -0.07
-                ]
-              },
-              "components": {
-                "StemPad": {
-                  "deck": "B",
-                  "stem": "bass",
-                  "active": true,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "cue-a",
+          "name": "Cue A",
+          "content": {
+            "type": "asset",
+            "asset": "cue-button"
+          },
+          "transform": {
+            "position": [
+              -0.283,
+              0.056,
+              0.075
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "cue",
+              "deck": "A",
+              "lit": false,
+              "armed": false
             },
-            {
-              "id": "pad-b-chords",
-              "name": "Pad B Chords",
-              "content": {
-                "type": "asset",
-                "asset": "pad-chords"
-              },
-              "transform": {
-                "position": [
-                  -0.03,
-                  0.018,
-                  -0.01
-                ]
-              },
-              "components": {
-                "StemPad": {
-                  "deck": "B",
-                  "stem": "chords",
-                  "active": true,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "play-a",
+          "name": "Play A",
+          "content": {
+            "type": "asset",
+            "asset": "play-button"
+          },
+          "transform": {
+            "position": [
+              -0.283,
+              0.056,
+              0.122
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "play",
+              "deck": "A",
+              "lit": false,
+              "armed": false
             },
-            {
-              "id": "pad-b-melody",
-              "name": "Pad B Melody",
-              "content": {
-                "type": "asset",
-                "asset": "pad-melody"
-              },
-              "transform": {
-                "position": [
-                  0.03,
-                  0.018,
-                  -0.01
-                ]
-              },
-              "components": {
-                "StemPad": {
-                  "deck": "B",
-                  "stem": "melody",
-                  "active": true,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "mode-a-0",
+          "name": "Mode A 0",
+          "content": {
+            "type": "asset",
+            "asset": "mode-button"
+          },
+          "transform": {
+            "position": [
+              -0.223,
+              0.05,
+              0.035
+            ]
+          }
+        },
+        {
+          "id": "mode-a-1",
+          "name": "Mode A 1",
+          "content": {
+            "type": "asset",
+            "asset": "mode-button"
+          },
+          "transform": {
+            "position": [
+              -0.185,
+              0.05,
+              0.035
+            ]
+          }
+        },
+        {
+          "id": "mode-a-2",
+          "name": "Mode A 2",
+          "content": {
+            "type": "asset",
+            "asset": "mode-button"
+          },
+          "transform": {
+            "position": [
+              -0.147,
+              0.05,
+              0.035
+            ]
+          }
+        },
+        {
+          "id": "pad-a-drums",
+          "name": "Pad A Drums",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              -0.242,
+              0.054,
+              0.075
+            ]
+          },
+          "components": {
+            "StemPad": {
+              "deck": "A",
+              "stem": "drums",
+              "active": true,
+              "armed": false
             },
-            {
-              "id": "play-b",
-              "name": "Play B",
-              "content": {
-                "type": "asset",
-                "asset": "play-button"
-              },
-              "transform": {
-                "position": [
-                  -0.06,
-                  0.018,
-                  0.09
-                ]
-              },
-              "components": {
-                "PushButton": {
-                  "action": "play",
-                  "deck": "B",
-                  "lit": false,
-                  "armed": false
-                },
-                "PokeInteractable": {},
-                "RayInteractable": {}
-              }
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "pad-a-bass",
+          "name": "Pad A Bass",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              -0.204,
+              0.054,
+              0.075
+            ]
+          },
+          "components": {
+            "StemPad": {
+              "deck": "A",
+              "stem": "bass",
+              "active": true,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "pad-a-chords",
+          "name": "Pad A Chords",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              -0.166,
+              0.054,
+              0.075
+            ]
+          },
+          "components": {
+            "StemPad": {
+              "deck": "A",
+              "stem": "chords",
+              "active": true,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "pad-a-melody",
+          "name": "Pad A Melody",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              -0.128,
+              0.054,
+              0.075
+            ]
+          },
+          "components": {
+            "StemPad": {
+              "deck": "A",
+              "stem": "melody",
+              "active": true,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "pad-a-10",
+          "name": "Pad A 10",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              -0.242,
+              0.054,
+              0.113
+            ]
+          }
+        },
+        {
+          "id": "pad-a-11",
+          "name": "Pad A 11",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              -0.204,
+              0.054,
+              0.113
+            ]
+          }
+        },
+        {
+          "id": "pad-a-12",
+          "name": "Pad A 12",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              -0.166,
+              0.054,
+              0.113
+            ]
+          }
+        },
+        {
+          "id": "pad-a-13",
+          "name": "Pad A 13",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              -0.128,
+              0.054,
+              0.113
+            ]
+          }
+        },
+        {
+          "id": "jog-b",
+          "name": "Jog B",
+          "content": {
+            "type": "asset",
+            "asset": "jog-wheel-b"
+          },
+          "transform": {
+            "position": [
+              0.2,
+              0.0416,
+              -0.045
+            ]
+          },
+          "components": {
+            "JogWheel": {
+              "deck": "B"
             }
-          ]
+          }
+        },
+        {
+          "id": "tempo-b",
+          "name": "Tempo B",
+          "content": {
+            "type": "asset",
+            "asset": "tempo-fader-cap"
+          },
+          "transform": {
+            "position": [
+              0.285,
+              0.0416,
+              -0.05
+            ]
+          }
+        },
+        {
+          "id": "sync-b",
+          "name": "Sync B",
+          "content": {
+            "type": "asset",
+            "asset": "sync-button"
+          },
+          "transform": {
+            "position": [
+              0.285,
+              0.05,
+              -0.128
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "sync",
+              "deck": "B",
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "cue-b",
+          "name": "Cue B",
+          "content": {
+            "type": "asset",
+            "asset": "cue-button"
+          },
+          "transform": {
+            "position": [
+              0.283,
+              0.056,
+              0.075
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "cue",
+              "deck": "B",
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "play-b",
+          "name": "Play B",
+          "content": {
+            "type": "asset",
+            "asset": "play-button"
+          },
+          "transform": {
+            "position": [
+              0.283,
+              0.056,
+              0.122
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "play",
+              "deck": "B",
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "mode-b-0",
+          "name": "Mode B 0",
+          "content": {
+            "type": "asset",
+            "asset": "mode-button"
+          },
+          "transform": {
+            "position": [
+              0.223,
+              0.05,
+              0.035
+            ]
+          }
+        },
+        {
+          "id": "mode-b-1",
+          "name": "Mode B 1",
+          "content": {
+            "type": "asset",
+            "asset": "mode-button"
+          },
+          "transform": {
+            "position": [
+              0.185,
+              0.05,
+              0.035
+            ]
+          }
+        },
+        {
+          "id": "mode-b-2",
+          "name": "Mode B 2",
+          "content": {
+            "type": "asset",
+            "asset": "mode-button"
+          },
+          "transform": {
+            "position": [
+              0.147,
+              0.05,
+              0.035
+            ]
+          }
+        },
+        {
+          "id": "pad-b-drums",
+          "name": "Pad B Drums",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              0.242,
+              0.054,
+              0.075
+            ]
+          },
+          "components": {
+            "StemPad": {
+              "deck": "B",
+              "stem": "drums",
+              "active": true,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "pad-b-bass",
+          "name": "Pad B Bass",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              0.204,
+              0.054,
+              0.075
+            ]
+          },
+          "components": {
+            "StemPad": {
+              "deck": "B",
+              "stem": "bass",
+              "active": true,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "pad-b-chords",
+          "name": "Pad B Chords",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              0.166,
+              0.054,
+              0.075
+            ]
+          },
+          "components": {
+            "StemPad": {
+              "deck": "B",
+              "stem": "chords",
+              "active": true,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "pad-b-melody",
+          "name": "Pad B Melody",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              0.128,
+              0.054,
+              0.075
+            ]
+          },
+          "components": {
+            "StemPad": {
+              "deck": "B",
+              "stem": "melody",
+              "active": true,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "pad-b-10",
+          "name": "Pad B 10",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              0.242,
+              0.054,
+              0.113
+            ]
+          }
+        },
+        {
+          "id": "pad-b-11",
+          "name": "Pad B 11",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              0.204,
+              0.054,
+              0.113
+            ]
+          }
+        },
+        {
+          "id": "pad-b-12",
+          "name": "Pad B 12",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              0.166,
+              0.054,
+              0.113
+            ]
+          }
+        },
+        {
+          "id": "pad-b-13",
+          "name": "Pad B 13",
+          "content": {
+            "type": "asset",
+            "asset": "performance-pad"
+          },
+          "transform": {
+            "position": [
+              0.128,
+              0.054,
+              0.113
+            ]
+          }
+        },
+        {
+          "id": "trim-a",
+          "name": "Trim A",
+          "content": {
+            "type": "asset",
+            "asset": "knob-small"
+          },
+          "transform": {
+            "position": [
+              -0.07,
+              0.0416,
+              -0.135
+            ]
+          }
+        },
+        {
+          "id": "hi-a",
+          "name": "Hi A",
+          "content": {
+            "type": "asset",
+            "asset": "knob-small"
+          },
+          "transform": {
+            "position": [
+              -0.07,
+              0.0416,
+              -0.103
+            ]
+          }
+        },
+        {
+          "id": "mid-a",
+          "name": "Mid A",
+          "content": {
+            "type": "asset",
+            "asset": "knob-small"
+          },
+          "transform": {
+            "position": [
+              -0.07,
+              0.0416,
+              -0.071
+            ]
+          }
+        },
+        {
+          "id": "low-a",
+          "name": "Low A",
+          "content": {
+            "type": "asset",
+            "asset": "knob-small"
+          },
+          "transform": {
+            "position": [
+              -0.07,
+              0.0416,
+              -0.039
+            ]
+          }
+        },
+        {
+          "id": "filter-a",
+          "name": "Filter A",
+          "content": {
+            "type": "asset",
+            "asset": "knob-large"
+          },
+          "transform": {
+            "position": [
+              -0.07,
+              0.0416,
+              -0.002
+            ]
+          }
+        },
+        {
+          "id": "fader-a",
+          "name": "Fader A",
+          "content": {
+            "type": "asset",
+            "asset": "channel-fader-cap"
+          },
+          "transform": {
+            "position": [
+              -0.07,
+              0.0416,
+              0.034
+            ]
+          }
+        },
+        {
+          "id": "trim-b",
+          "name": "Trim B",
+          "content": {
+            "type": "asset",
+            "asset": "knob-small"
+          },
+          "transform": {
+            "position": [
+              0.07,
+              0.0416,
+              -0.135
+            ]
+          }
+        },
+        {
+          "id": "hi-b",
+          "name": "Hi B",
+          "content": {
+            "type": "asset",
+            "asset": "knob-small"
+          },
+          "transform": {
+            "position": [
+              0.07,
+              0.0416,
+              -0.103
+            ]
+          }
+        },
+        {
+          "id": "mid-b",
+          "name": "Mid B",
+          "content": {
+            "type": "asset",
+            "asset": "knob-small"
+          },
+          "transform": {
+            "position": [
+              0.07,
+              0.0416,
+              -0.071
+            ]
+          }
+        },
+        {
+          "id": "low-b",
+          "name": "Low B",
+          "content": {
+            "type": "asset",
+            "asset": "knob-small"
+          },
+          "transform": {
+            "position": [
+              0.07,
+              0.0416,
+              -0.039
+            ]
+          }
+        },
+        {
+          "id": "filter-b",
+          "name": "Filter B",
+          "content": {
+            "type": "asset",
+            "asset": "knob-large"
+          },
+          "transform": {
+            "position": [
+              0.07,
+              0.0416,
+              -0.002
+            ]
+          }
+        },
+        {
+          "id": "fader-b",
+          "name": "Fader B",
+          "content": {
+            "type": "asset",
+            "asset": "channel-fader-cap"
+          },
+          "transform": {
+            "position": [
+              0.07,
+              0.0416,
+              0.034
+            ]
+          }
+        },
+        {
+          "id": "crossfader",
+          "name": "Crossfader",
+          "content": {
+            "type": "asset",
+            "asset": "crossfader-cap"
+          },
+          "transform": {
+            "position": [
+              0,
+              0.0416,
+              0.14
+            ]
+          }
+        },
+        {
+          "id": "xf-end-a",
+          "name": "Xf End A",
+          "content": {
+            "type": "asset",
+            "asset": "crossfade-end-a"
+          },
+          "transform": {
+            "position": [
+              -0.087,
+              0.056,
+              0.14
+            ]
+          }
+        },
+        {
+          "id": "xf-end-b",
+          "name": "Xf End B",
+          "content": {
+            "type": "asset",
+            "asset": "crossfade-end-b"
+          },
+          "transform": {
+            "position": [
+              0.087,
+              0.056,
+              0.14
+            ]
+          }
+        },
+        {
+          "id": "fx-echo",
+          "name": "Fx Echo",
+          "content": {
+            "type": "asset",
+            "asset": "fx-button"
+          },
+          "transform": {
+            "position": [
+              -0.02,
+              0.05,
+              0.035
+            ]
+          }
+        },
+        {
+          "id": "fx-space",
+          "name": "Fx Space",
+          "content": {
+            "type": "asset",
+            "asset": "fx-button"
+          },
+          "transform": {
+            "position": [
+              0.02,
+              0.05,
+              0.035
+            ]
+          }
+        },
+        {
+          "id": "drop",
+          "name": "Drop",
+          "content": {
+            "type": "asset",
+            "asset": "drop-button"
+          },
+          "transform": {
+            "position": [
+              0,
+              0.058,
+              -0.035
+            ]
+          }
         },
         {
           "id": "start-pad",
@@ -389,8 +997,8 @@
           "transform": {
             "position": [
               0,
-              0.05,
-              0.05
+              0.08,
+              -0.035
             ]
           },
           "components": {

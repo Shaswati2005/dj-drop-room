@@ -5,6 +5,7 @@ import { installDebugApi } from './debug/debug-api.js';
 import { ConsoleInputSystem } from './systems/console-input-system.js';
 import { ConsolePlacementSystem } from './systems/console-placement-system.js';
 import { MusicStateMirrorSystem } from './systems/music-state-mirror-system.js';
+import { JogWheelSystem } from './systems/jog-wheel-system.js';
 import { PadFeedbackSystem } from './systems/pad-feedback-system.js';
 
 // Any user gesture may resume audio: page clicks and keys, and XR selects
@@ -26,6 +27,7 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(ConsolePlacementSystem);
   world.registerSystem(MusicStateMirrorSystem);
   world.registerSystem(PadFeedbackSystem);
+  world.registerSystem(JogWheelSystem);
   world.renderer.xr.addEventListener('sessionstart', () => {
     world.renderer.xr.getSession()?.addEventListener('selectstart', unlockAudio);
   });

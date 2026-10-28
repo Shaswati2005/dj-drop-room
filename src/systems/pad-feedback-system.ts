@@ -5,6 +5,8 @@ import { ButtonActions, PushButton, StemPad } from '../console-components.js';
 
 const PRESS_DEPTH = 0.007; // m, PLAN §2.2
 const AMBER = new Color('#FFB020');
+/** Stem colours (DESIGN.md): every pad is one asset, lit in its stem's colour. */
+const STEM_COLORS: Record<string, string> = { drums: '#FF7A2E', bass: '#2E8BFF', chords: '#A65CFF', melody: '#2EFFB0' };
 
 interface PadVisual {
   cap: Object3D;
@@ -44,7 +46,9 @@ export class PadFeedbackSystem extends createSystem({
     const v: PadVisual = {
       cap,
       material,
-      color: material.emissive.clone(),
+      color: entity.hasComponent(StemPad)
+        ? new Color(STEM_COLORS[entity.getValue(StemPad, 'stem') as string] ?? '#FFFFFF')
+        : material.emissive.clone(),
       restY: cap.position.y,
       wasActive: true,
       flash: 0,

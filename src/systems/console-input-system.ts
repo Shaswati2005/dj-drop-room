@@ -27,7 +27,10 @@ export class ConsoleInputSystem extends createSystem({
           return;
         }
         if (!engine.state.running) return;
-        engine.togglePlay(entity.getValue(PushButton, 'deck') as DeckId);
+        const deck = entity.getValue(PushButton, 'deck') as DeckId;
+        if (action === ButtonActions.cue) engine.cue(deck);
+        else if (action === ButtonActions.sync) engine.sync(deck);
+        else engine.togglePlay(deck);
         engine.click(false);
       }),
     );
