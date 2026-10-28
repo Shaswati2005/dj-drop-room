@@ -86,8 +86,8 @@ check('bass leaves', off != null);
 if (off) {
   const t = JSON.parse(run(['browser', 'run', 'scripts/read-timing.mjs']).data.result);
   const wait = t.commitAt - t.pressAt;
-  check('...applied exactly on the next bar line', Math.round(t.commitTicks) % t.ticksPerBar === 0 && wait > 0 && wait <= t.barSeconds + 0.2,
-    `pressed at ${t.pressAt.toFixed(2)} s, applied at ${t.commitAt.toFixed(2)} s (bar = ${t.barSeconds.toFixed(2)} s, tick ${t.commitTicks})`);
+  check('...applied exactly on the next bar line', Math.min(t.barPhase, 1 - t.barPhase) < 0.005 && wait > 0 && wait <= t.barSeconds + 0.2,
+    `pressed at ${t.pressAt.toFixed(2)} s, applied at ${t.commitAt.toFixed(2)} s (bar = ${t.barSeconds.toFixed(2)} s, bar phase ${t.barPhase.toFixed(4)})`);
   const pad = values(bassA, 'StemPad');
   check('pad shows off and no longer armed', pad.active === false && pad.armed === false);
 }
@@ -108,11 +108,13 @@ check('all four stems back on, nothing else toggled', m.stemsA.every((v) => v ==
 
 // 6. PLAY stops deck A on the next bar and starts it again
 press('Play A');
-sleep(2.6);
-check('PLAY stops deck A', music().playingA === false);
+sleep(1);
+const paused = music();
+check('PLAY pauses deck A', paused.playingA === false);
 press('Play A');
 sleep(2.6);
 m = music();
-check('PLAY starts deck A again from the intro', m.playingA === true && m.sectionA === 'intro', m.sectionA);
+// the playhead moved on from the pause point (it may have wrapped into the outro loop)
+check('PLAY resumes deck A', m.playingA === true && Math.abs(m.positionA - paused.positionA) > 0.5, `paused at ${paused.positionA.toFixed(2)} s, now ${m.positionA.toFixed(2)} s`);
 
 console.log(`${results.filter(Boolean).length}/${results.length} passed`);

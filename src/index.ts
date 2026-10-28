@@ -11,6 +11,9 @@ import { PadFeedbackSystem } from './systems/pad-feedback-system.js';
 // (a hand pinch), since a fingertip poke alone is not a browser gesture.
 for (const type of ['pointerdown', 'keydown'] as const) document.addEventListener(type, unlockAudio);
 
+// the opening tracks load while the page is still showing the Start button
+void liveEngine().preload();
+
 const startButton = document.getElementById('start-music') as HTMLButtonElement;
 startButton.addEventListener('click', () => {
   unlockAudio();

@@ -1,10 +1,11 @@
 import * as Tone from 'tone';
-import { DeckKit } from './synths/deck-kit.js';
-import { generatorFor } from './tracks/catalog.js';
-import { midiToHz, sectionAt, STEMS } from './track-model.js';
-import type { Generator, Section, Stem, TrackDef } from './track-model.js';
+import { sectionAt, STEMS, trackBars } from './track-model.js';
+import type { Section, Stem, TrackDef } from './track-model.js';
 
 export type DeckId = 'A' | 'B';
+
+/** Tempo fader range, ±8 % like the usual DJ-player default. */
+export const TEMPO_RANGE = 0.08;
 
 /** A value that changes at a scheduled audio time, so visuals can show the
  * change when it is heard rather than when it was scheduled. */
@@ -30,59 +31,176 @@ export class Timed<T> {
   }
 }
 
+export function stemUrl(trackId: string, stem: Stem): string {
+  return `${import.meta.env.BASE_URL}audio/tracks/${trackId}/${stem}.ogg`;
+}
+
 /**
- * One deck: four stems, per-bar scheduling and bar-quantised toggles
- * (PLAN §3.4, §3.6). Every change is applied inside the bar callback, which
- * is what makes "every change lands on the next bar" true by construction.
+ * One DJ deck playing a pre-rendered track: four stem files started together,
+ * a playhead, a cue point, a tempo fader and SYNC. Stem toggles still land on
+ * the deck's next bar line (PLAN §3.6); the deck's own beat grid is exact
+ * because every track starts on a downbeat at 0 s.
  */
 export class Deck {
   readonly output: Tone.Gain;
   track: TrackDef | null = null;
-  trackBar = 0;
+  status: 'empty' | 'loading' | 'ready' = 'empty';
+  /** where PLAY starts from and CUE returns to (track seconds, on a beat) */
+  cuePoint = 0;
+  /** playback rate set by the tempo fader or SYNC */
+  rate = 1;
   /** audio time of the last bar a stem toggle was applied on (tests) */
   lastCommitTime = -1;
 
   readonly stems: Timed<boolean>[] = STEMS.map(() => new Timed(true));
   readonly playing = new Timed(false);
-  readonly section = new Timed<Section | ''>('');
-  readonly phraseBar = new Timed(0);
 
-  private readonly kit: DeckKit;
   private readonly stemGains: Tone.Gain[];
-  private generator: Generator | null = null;
+  private buffers: Tone.ToneAudioBuffer[] = [];
+  private sources: (Tone.ToneBufferSource | null)[] = [null, null, null, null];
   private stemOn = [true, true, true, true];
   private stemArmed = [false, false, false, false];
   private isPlaying = false;
-  private playArmed = false;
+  private anchorTime = 0;
+  private anchorPos = 0;
+  /** the last section loops so a deck never falls silent (auto-loop outro) */
+  private loopStart = 0;
+  private loopEnd = 0;
+  private handledBar = -1;
 
   constructor(
-    context: Tone.BaseContext,
+    private readonly context: Tone.BaseContext,
     readonly id: DeckId,
   ) {
-    this.kit = new DeckKit(context);
     this.output = new Tone.Gain({ context });
-    this.stemGains = [this.kit.drums, this.kit.bass, this.kit.chords, this.kit.melody];
-    for (const gain of this.stemGains) gain.connect(this.output);
+    this.stemGains = STEMS.map(() => new Tone.Gain({ context }).connect(this.output));
   }
 
-  load(track: TrackDef): void {
+  /** Track length of one bar, in track seconds. */
+  get barSeconds(): number {
+    return this.track == null ? 2 : 240 / this.track.bpm;
+  }
+
+  get bpm(): number {
+    return this.track == null ? 0 : this.track.bpm * this.rate;
+  }
+
+  get duration(): number {
+    return this.loopEnd;
+  }
+
+  get isRunning(): boolean {
+    return this.isPlaying;
+  }
+
+  async load(track: TrackDef): Promise<void> {
+    if (this.isPlaying) this.pause(this.context.currentTime);
+    this.status = 'loading';
     this.track = track;
-    this.generator = generatorFor(track);
-    this.trackBar = 0;
+    const raw = this.context.rawContext as AudioContext;
+    const audio = await Promise.all(
+      STEMS.map(async (stem) => {
+        const response = await fetch(stemUrl(track.id, stem));
+        if (!response.ok) throw new Error(`Missing stem ${stemUrl(track.id, stem)}`);
+        return raw.decodeAudioData(await response.arrayBuffer());
+      }),
+    );
+    this.buffers = audio.map((buffer) => new Tone.ToneAudioBuffer(buffer));
+    const bars = trackBars(track);
+    const last = track.form[track.form.length - 1];
+    this.loopEnd = bars * this.barSeconds;
+    this.loopStart = (bars - last.bars) * this.barSeconds;
+    this.cuePoint = 0;
+    this.anchorPos = 0;
+    this.status = 'ready';
   }
 
-  /** Start immediately from a bar of the track (session start, offline renders). */
-  cue(bar = 0): void {
-    this.trackBar = bar;
+  /** Playhead in track seconds at an audio time. */
+  position(time: number): number {
+    if (!this.isPlaying) return this.anchorPos;
+    const pos = this.anchorPos + Math.max(0, time - this.anchorTime) * this.rate;
+    if (pos < this.loopEnd) return pos;
+    const span = this.loopEnd - this.loopStart;
+    return this.loopStart + ((pos - this.loopStart) % span);
+  }
+
+  section(time: number): Section | '' {
+    if (this.track == null) return '';
+    return sectionAt(this.track, Math.floor(this.position(time) / this.barSeconds)).section;
+  }
+
+  phraseBar(time: number): number {
+    if (this.track == null) return 0;
+    return sectionAt(this.track, Math.floor(this.position(time) / this.barSeconds)).phraseBar;
+  }
+
+  /** Audio time of this deck's next bar line after `time`. */
+  nextBarTime(time: number): number {
+    const pos = this.position(time);
+    const next = (Math.floor(pos / this.barSeconds + 1e-6) + 1) * this.barSeconds;
+    return time + (Math.min(next, this.loopEnd) - pos) / this.rate;
+  }
+
+  play(at: number, now: number): void {
+    if (this.isPlaying || this.status !== 'ready') return;
+    this.startSources(at, this.anchorPos);
     this.isPlaying = true;
-    this.playing.set(true, -Infinity, 0);
+    this.anchorTime = at;
+    this.playing.set(true, at, now);
   }
 
-  /** Set a stem at once, without quantisation (tests and offline solo renders). */
-  setStemNow(index: number, on: boolean): void {
-    this.stemOn[index] = on;
-    this.stemGains[index].gain.value = on ? 1 : 0;
-    this.stems[index].set(on, -Infinity, 0);
+  pause(at: number, now = at): void {
+    if (!this.isPlaying) return;
+    this.anchorPos = this.position(at);
+    this.stopSources(at);
+    this.isPlaying = false;
+    this.playing.set(false, at, now);
+  }
+
+  /** Move the playhead; if playing, the jump is heard at `at`. */
+  seek(pos: number, at: number): void {
+    if (this.isPlaying) {
+      this.stopSources(at);
+      this.startSources(at, pos);
+      this.anchorTime = at;
+    }
+    this.anchorPos = pos;
+  }
+
+  /** DJ-player CUE: playing → back to the cue point and pause; paused → the cue
+   * point moves to the playhead, snapped to the nearest beat. */
+  cue(now: number): void {
+    if (this.isPlaying) {
+      this.pause(now);
+      this.anchorPos = this.cuePoint;
+    } else {
+      const beat = this.barSeconds / 4;
+      this.cuePoint = Math.round(this.anchorPos / beat) * beat;
+      this.anchorPos = this.cuePoint;
+    }
+  }
+
+  setRate(rate: number, now: number): void {
+    if (this.isPlaying) {
+      this.anchorPos = this.position(now);
+      this.anchorTime = now;
+      for (const source of this.sources) source?.playbackRate.setValueAtTime(rate, now);
+    }
+    this.rate = rate;
+  }
+
+  /** SYNC: match the master's tempo and, if both play, its position in the bar. */
+  syncTo(master: Deck, now: number): void {
+    if (master.track == null || this.track == null) return;
+    this.setRate(master.bpm / this.track.bpm, now);
+    if (!this.isPlaying || !master.isPlaying) return;
+    const at = now + 0.03;
+    const mine = (this.position(at) / this.barSeconds) % 1;
+    const theirs = (master.position(at) / master.barSeconds) % 1;
+    let delta = theirs - mine;
+    if (delta > 0.5) delta -= 1;
+    if (delta < -0.5) delta += 1;
+    if (Math.abs(delta) > 0.001) this.seek(Math.max(0, this.position(at) + delta * this.barSeconds), at);
   }
 
   /** Arm a stem toggle for the next bar; pressing again before then cancels. */
@@ -91,57 +209,65 @@ export class Deck {
     this.stemArmed[i] = !this.stemArmed[i];
   }
 
-  togglePlay(): void {
-    this.playArmed = !this.playArmed;
-  }
-
   armed(index: number): boolean {
     return this.stemArmed[index];
   }
 
-  get playIsArmed(): boolean {
-    return this.playArmed;
+  /** Scheduler tick: apply armed stem toggles on the next bar line once it is
+   * within `lookAhead` seconds; while paused they apply at once. */
+  tick(now: number, lookAhead: number, audibleNow: number): void {
+    if (!this.stemArmed.includes(true)) return;
+    if (!this.isPlaying) {
+      this.commitStems(now, audibleNow);
+      return;
+    }
+    const at = this.nextBarTime(now);
+    const key = Math.round(at * 1000);
+    if (at - now <= lookAhead && key !== this.handledBar) {
+      this.handledBar = key;
+      this.commitStems(at, audibleNow);
+    }
   }
 
-  /** Called by the clock at the start of every bar, `time` ahead of now. */
-  onBar(time: number, bpm: number, now: number): void {
-    if (this.playArmed) {
-      this.playArmed = false;
-      this.isPlaying = !this.isPlaying;
-      if (this.isPlaying) this.trackBar = 0;
-      else this.kit.silence(time);
-      this.playing.set(this.isPlaying, time, now);
-    }
+  private commitStems(at: number, now: number): void {
     for (let i = 0; i < 4; i++) {
       if (!this.stemArmed[i]) continue;
       this.stemArmed[i] = false;
       this.stemOn[i] = !this.stemOn[i];
-      this.stemGains[i].gain.rampTo(this.stemOn[i] ? 1 : 0, 0.02, time);
-      this.stems[i].set(this.stemOn[i], time, now);
-      this.lastCommitTime = time;
+      this.stemGains[i].gain.rampTo(this.stemOn[i] ? 1 : 0, 0.02, at);
+      this.stems[i].set(this.stemOn[i], at, now);
     }
-    if (!this.isPlaying || this.track == null || this.generator == null) return;
+    this.lastCommitTime = at;
+  }
 
-    const ctx = sectionAt(this.track, this.trackBar);
-    this.section.set(ctx.section, time, now);
-    this.phraseBar.set(ctx.phraseBar, time, now);
-    const pattern = this.generator(this.track, ctx);
-    const sixteenth = 60 / bpm / 4;
-    const swing = this.track.swing * sixteenth;
-    const at = (step: number) => time + step * sixteenth + (step % 2 === 1 ? swing : 0);
+  private startSources(at: number, pos: number): void {
+    this.buffers.forEach((buffer, i) => {
+      const source = new Tone.ToneBufferSource({
+        context: this.context,
+        url: buffer,
+        loop: true,
+        loopStart: this.loopStart,
+        loopEnd: this.loopEnd,
+        playbackRate: this.rate,
+        fadeIn: 0.004,
+        fadeOut: 0.008,
+      }).connect(this.stemGains[i]);
+      source.onended = () => source.dispose();
+      source.start(at, pos);
+      this.sources[i] = source;
+    });
+  }
 
-    for (const e of pattern.drums) this.kit.drum(e.voice!, at(e.step), e.length * sixteenth * 0.9, e.velocity);
-    for (const e of pattern.bass) this.kit.bassNote(midiToHz(e.notes![0]), at(e.step), e.length * sixteenth * 0.9, e.velocity);
-    for (const e of pattern.chords) {
-      this.kit.chord(e.notes!.map(midiToHz), at(e.step), e.length * sixteenth * 0.9, e.velocity);
+  private stopSources(at: number): void {
+    for (let i = 0; i < this.sources.length; i++) {
+      this.sources[i]?.stop(at);
+      this.sources[i] = null;
     }
-    for (const e of pattern.melody) this.kit.lead(midiToHz(e.notes![0]), at(e.step), e.length * sixteenth * 0.9, e.velocity);
-    this.trackBar++;
   }
 
   dispose(): void {
-    this.kit.dispose();
+    this.stopSources(this.context.currentTime);
+    for (const gain of this.stemGains) gain.dispose();
     this.output.dispose();
   }
 }
-

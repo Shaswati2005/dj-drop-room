@@ -78,6 +78,11 @@ export function sectionAt(track: TrackDef, trackBar: number): BarContext {
   };
 }
 
+/** Bars in one pass through the track's form. */
+export function trackBars(track: TrackDef): number {
+  return track.form.reduce((bars, part) => bars + part.bars, 0);
+}
+
 export function midiToHz(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }

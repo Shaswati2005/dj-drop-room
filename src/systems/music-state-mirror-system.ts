@@ -25,6 +25,10 @@ export class MusicStateMirrorSystem extends createSystem({
       entity.setValue(MusicState, 'playingB', s.B.playing);
       entity.setValue(MusicState, 'latencyMs', s.latencyMs);
       entity.setValue(MusicState, 'level', s.level);
+      entity.setValue(MusicState, 'bpmA', s.A.bpm);
+      entity.setValue(MusicState, 'bpmB', s.B.bpm);
+      entity.setValue(MusicState, 'positionA', s.A.position);
+      entity.setValue(MusicState, 'positionB', s.B.position);
       const a = entity.getVectorView(MusicState, 'stemsA');
       const b = entity.getVectorView(MusicState, 'stemsB');
       for (let i = 0; i < 4; i++) {

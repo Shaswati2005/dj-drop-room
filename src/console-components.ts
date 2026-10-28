@@ -39,6 +39,10 @@ export const MusicState = createComponent('MusicState', {
   playingB: { type: Types.Boolean, default: false },
   stemsA: { type: Types.Vec4, default: [1, 1, 1, 1], help: 'drums, bass, chords, melody (1 = heard)' },
   stemsB: { type: Types.Vec4, default: [1, 1, 1, 1] },
+  bpmA: { type: Types.Float32, default: 0 },
+  bpmB: { type: Types.Float32, default: 0 },
+  positionA: { type: Types.Float32, default: 0, help: 'Playhead, track seconds' },
+  positionB: { type: Types.Float32, default: 0 },
   latencyMs: { type: Types.Float32, default: 0 },
   level: { type: Types.Float32, default: 0 },
 });
