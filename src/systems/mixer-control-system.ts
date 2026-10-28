@@ -4,6 +4,7 @@ import { liveEngine } from '../audio/live.js';
 import type { KnobControl } from '../audio/engine.js';
 import type { DeckId } from '../audio/deck.js';
 import { Fader, Knob } from '../console-components.js';
+import { readFingertip } from './fingertip.js';
 
 /** Knob travel each side of centre: 135°, a DJ mixer's 270° sweep. */
 export const KNOB_RANGE = (135 * Math.PI) / 180;
@@ -82,24 +83,8 @@ export class MixerControlSystem extends createSystem({
     engine.click(false);
   }
 
-  /** World position of a hand's index fingertip into this.finger, read from
-   * the XR frame; false when that hand is not tracked. */
   private fingertip(handedness: XRHandedness): boolean {
-    const xr = this.world.renderer.xr;
-    const frame = xr.getFrame();
-    const space = xr.getReferenceSpace();
-    if (frame == null || space == null) return false;
-    for (const source of frame.session.inputSources) {
-      if (source.handedness !== handedness || source.hand == null) continue;
-      const joint = source.hand.get('index-finger-tip');
-      const pose = joint == null ? undefined : frame.getJointPose?.(joint, space);
-      if (pose == null) return false;
-      const { x, y, z } = pose.transform.position;
-      // reference space is the player rig's local space
-      this.player.localToWorld(this.finger.set(x, y, z));
-      return true;
-    }
-    return false;
+    return readFingertip(this.world.renderer, this.player, handedness, this.finger);
   }
 
   /** The hand whose index fingertip is closest to the knob (within 8 cm),

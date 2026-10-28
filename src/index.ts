@@ -6,6 +6,7 @@ import { ConsoleInputSystem } from './systems/console-input-system.js';
 import { ConsolePlacementSystem } from './systems/console-placement-system.js';
 import { MusicStateMirrorSystem } from './systems/music-state-mirror-system.js';
 import { DisplaySystem } from './systems/display-system.js';
+import { HintSystem } from './systems/hint-system.js';
 import { JogWheelSystem } from './systems/jog-wheel-system.js';
 import { MeterSystem } from './systems/meter-system.js';
 import { MixerControlSystem } from './systems/mixer-control-system.js';
@@ -34,6 +35,7 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(MixerControlSystem);
   world.registerSystem(MeterSystem);
   world.registerSystem(DisplaySystem);
+  world.registerSystem(HintSystem);
   world.renderer.xr.addEventListener('sessionstart', () => {
     world.renderer.xr.getSession()?.addEventListener('selectstart', unlockAudio);
   });
