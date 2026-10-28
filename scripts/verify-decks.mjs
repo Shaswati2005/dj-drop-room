@@ -30,7 +30,7 @@ export default async function run({ page, frame }) {
   });
   check('cold start: Start click to deck A heard <= 2 s', startMs <= 2000, `${startMs.toFixed(0)} ms`);
   let s = await state();
-  check('both decks loaded with Warm Start', s.A.status === 'ready' && s.B.status === 'ready' && s.B.trackId === 'warm-start');
+  check('Warm Start on A, Concrete waiting on B', s.A.status === 'ready' && s.B.status === 'ready' && s.A.trackId === 'warm-start' && s.B.trackId === 'concrete');
 
   // stems on the bar line
   await press('A.bass');
@@ -43,7 +43,9 @@ export default async function run({ page, frame }) {
   check('bass heard off', s.A.stems[1] === 0);
   await press('A.bass');
 
-  // quantised PLAY: B starts on A's bar line, so they are in phase
+  // match B's tempo first (Concrete is 128 BPM), then quantised PLAY starts B
+  // on A's bar line, so they are in phase
+  await press('B.sync');
   await press('B.play');
   await wait(2500);
   s = await state();
@@ -54,7 +56,7 @@ export default async function run({ page, frame }) {
   await app.evaluate(() => window.__dropRoom.tempo('B', 0.5));
   await wait(1500);
   s = await state();
-  check('tempo fader +0.5 → B at 124 × 1.04', Math.abs(s.B.bpm - 128.96) < 0.01, `${s.B.bpm.toFixed(2)} BPM`);
+  check('tempo fader +0.5 → Concrete at 128 × 1.04', Math.abs(s.B.bpm - 133.12) < 0.01, `${s.B.bpm.toFixed(2)} BPM`);
   check('B drifted out of phase', phaseGap(await phases()) > 0.01, JSON.stringify(await phases()));
   await press('B.sync');
   await wait(300);
@@ -71,7 +73,7 @@ export default async function run({ page, frame }) {
   check('PAUSE is instant and holds the playhead', !((await state()).B.playing) && Math.abs(p2 - p1) < 0.001, `${p1.toFixed(3)} s`);
   await press('B.cue');
   s = await state();
-  const beat = 240 / 124 / 4;
+  const beat = 240 / 128 / 4;
   check('CUE while paused sets the cue point on the nearest beat', Math.abs(s.B.cuePoint / beat - Math.round(s.B.cuePoint / beat)) < 1e-6 && Math.abs(s.B.cuePoint - p2) <= beat / 2,
     `cue ${s.B.cuePoint.toFixed(3)} s`);
   const cuePoint = s.B.cuePoint;

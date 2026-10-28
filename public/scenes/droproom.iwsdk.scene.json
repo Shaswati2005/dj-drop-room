@@ -104,6 +104,20 @@
           "components": {
             "JogWheel": {
               "deck": "A"
+            },
+            "OneHandGrabbable": {
+              "rotate": true,
+              "translate": false,
+              "rotateMin": [
+                0,
+                -1000,
+                0
+              ],
+              "rotateMax": [
+                0,
+                1000,
+                0
+              ]
             }
           }
         },
@@ -120,6 +134,29 @@
               0.0416,
               -0.05
             ]
+          },
+          "components": {
+            "Fader": {
+              "deck": "A",
+              "control": "tempo",
+              "from": -0.095,
+              "to": -0.005,
+              "value": 0
+            },
+            "OneHandGrabbable": {
+              "rotate": false,
+              "translate": true,
+              "translateMin": [
+                -0.285,
+                0.0416,
+                -0.095
+              ],
+              "translateMax": [
+                -0.285,
+                0.0416,
+                -0.005
+              ]
+            }
           }
         },
         {
@@ -140,6 +177,7 @@
             "PushButton": {
               "action": "sync",
               "deck": "A",
+              "index": 0,
               "lit": false,
               "armed": false
             },
@@ -165,6 +203,7 @@
             "PushButton": {
               "action": "cue",
               "deck": "A",
+              "index": 0,
               "lit": false,
               "armed": false
             },
@@ -190,6 +229,7 @@
             "PushButton": {
               "action": "play",
               "deck": "A",
+              "index": 0,
               "lit": false,
               "armed": false
             },
@@ -198,8 +238,8 @@
           }
         },
         {
-          "id": "mode-a-0",
-          "name": "Mode A 0",
+          "id": "mode-a-stems",
+          "name": "Mode A Stems",
           "content": {
             "type": "asset",
             "asset": "mode-button"
@@ -210,11 +250,22 @@
               0.05,
               0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "mode",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "mode-a-1",
-          "name": "Mode A 1",
+          "id": "mode-a-cues",
+          "name": "Mode A Cues",
           "content": {
             "type": "asset",
             "asset": "mode-button"
@@ -225,11 +276,22 @@
               0.05,
               0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "mode",
+              "deck": "A",
+              "index": 1,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "mode-a-2",
-          "name": "Mode A 2",
+          "id": "mode-a-loop",
+          "name": "Mode A Loop",
           "content": {
             "type": "asset",
             "asset": "mode-button"
@@ -240,6 +302,17 @@
               0.05,
               0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "mode",
+              "deck": "A",
+              "index": 2,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -257,11 +330,9 @@
             ]
           },
           "components": {
-            "StemPad": {
+            "PerfPad": {
               "deck": "A",
-              "stem": "drums",
-              "active": true,
-              "armed": false
+              "slot": 0
             },
             "PokeInteractable": {},
             "RayInteractable": {}
@@ -282,11 +353,9 @@
             ]
           },
           "components": {
-            "StemPad": {
+            "PerfPad": {
               "deck": "A",
-              "stem": "bass",
-              "active": true,
-              "armed": false
+              "slot": 1
             },
             "PokeInteractable": {},
             "RayInteractable": {}
@@ -307,11 +376,9 @@
             ]
           },
           "components": {
-            "StemPad": {
+            "PerfPad": {
               "deck": "A",
-              "stem": "chords",
-              "active": true,
-              "armed": false
+              "slot": 2
             },
             "PokeInteractable": {},
             "RayInteractable": {}
@@ -332,19 +399,17 @@
             ]
           },
           "components": {
-            "StemPad": {
+            "PerfPad": {
               "deck": "A",
-              "stem": "melody",
-              "active": true,
-              "armed": false
+              "slot": 3
             },
             "PokeInteractable": {},
             "RayInteractable": {}
           }
         },
         {
-          "id": "pad-a-10",
-          "name": "Pad A 10",
+          "id": "pad-a-5",
+          "name": "Pad A 5",
           "content": {
             "type": "asset",
             "asset": "performance-pad"
@@ -355,11 +420,19 @@
               0.054,
               0.113
             ]
+          },
+          "components": {
+            "PerfPad": {
+              "deck": "A",
+              "slot": 4
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "pad-a-11",
-          "name": "Pad A 11",
+          "id": "pad-a-6",
+          "name": "Pad A 6",
           "content": {
             "type": "asset",
             "asset": "performance-pad"
@@ -370,11 +443,19 @@
               0.054,
               0.113
             ]
+          },
+          "components": {
+            "PerfPad": {
+              "deck": "A",
+              "slot": 5
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "pad-a-12",
-          "name": "Pad A 12",
+          "id": "pad-a-7",
+          "name": "Pad A 7",
           "content": {
             "type": "asset",
             "asset": "performance-pad"
@@ -385,11 +466,19 @@
               0.054,
               0.113
             ]
+          },
+          "components": {
+            "PerfPad": {
+              "deck": "A",
+              "slot": 6
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "pad-a-13",
-          "name": "Pad A 13",
+          "id": "pad-a-8",
+          "name": "Pad A 8",
           "content": {
             "type": "asset",
             "asset": "performance-pad"
@@ -400,6 +489,14 @@
               0.054,
               0.113
             ]
+          },
+          "components": {
+            "PerfPad": {
+              "deck": "A",
+              "slot": 7
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -419,6 +516,20 @@
           "components": {
             "JogWheel": {
               "deck": "B"
+            },
+            "OneHandGrabbable": {
+              "rotate": true,
+              "translate": false,
+              "rotateMin": [
+                0,
+                -1000,
+                0
+              ],
+              "rotateMax": [
+                0,
+                1000,
+                0
+              ]
             }
           }
         },
@@ -435,6 +546,29 @@
               0.0416,
               -0.05
             ]
+          },
+          "components": {
+            "Fader": {
+              "deck": "B",
+              "control": "tempo",
+              "from": -0.095,
+              "to": -0.005,
+              "value": 0
+            },
+            "OneHandGrabbable": {
+              "rotate": false,
+              "translate": true,
+              "translateMin": [
+                0.285,
+                0.0416,
+                -0.095
+              ],
+              "translateMax": [
+                0.285,
+                0.0416,
+                -0.005
+              ]
+            }
           }
         },
         {
@@ -455,6 +589,7 @@
             "PushButton": {
               "action": "sync",
               "deck": "B",
+              "index": 0,
               "lit": false,
               "armed": false
             },
@@ -480,6 +615,7 @@
             "PushButton": {
               "action": "cue",
               "deck": "B",
+              "index": 0,
               "lit": false,
               "armed": false
             },
@@ -505,6 +641,7 @@
             "PushButton": {
               "action": "play",
               "deck": "B",
+              "index": 0,
               "lit": false,
               "armed": false
             },
@@ -513,8 +650,8 @@
           }
         },
         {
-          "id": "mode-b-0",
-          "name": "Mode B 0",
+          "id": "mode-b-stems",
+          "name": "Mode B Stems",
           "content": {
             "type": "asset",
             "asset": "mode-button"
@@ -525,11 +662,22 @@
               0.05,
               0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "mode",
+              "deck": "B",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "mode-b-1",
-          "name": "Mode B 1",
+          "id": "mode-b-cues",
+          "name": "Mode B Cues",
           "content": {
             "type": "asset",
             "asset": "mode-button"
@@ -540,11 +688,22 @@
               0.05,
               0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "mode",
+              "deck": "B",
+              "index": 1,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "mode-b-2",
-          "name": "Mode B 2",
+          "id": "mode-b-loop",
+          "name": "Mode B Loop",
           "content": {
             "type": "asset",
             "asset": "mode-button"
@@ -555,6 +714,17 @@
               0.05,
               0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "mode",
+              "deck": "B",
+              "index": 2,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -572,11 +742,9 @@
             ]
           },
           "components": {
-            "StemPad": {
+            "PerfPad": {
               "deck": "B",
-              "stem": "drums",
-              "active": true,
-              "armed": false
+              "slot": 0
             },
             "PokeInteractable": {},
             "RayInteractable": {}
@@ -597,11 +765,9 @@
             ]
           },
           "components": {
-            "StemPad": {
+            "PerfPad": {
               "deck": "B",
-              "stem": "bass",
-              "active": true,
-              "armed": false
+              "slot": 1
             },
             "PokeInteractable": {},
             "RayInteractable": {}
@@ -622,11 +788,9 @@
             ]
           },
           "components": {
-            "StemPad": {
+            "PerfPad": {
               "deck": "B",
-              "stem": "chords",
-              "active": true,
-              "armed": false
+              "slot": 2
             },
             "PokeInteractable": {},
             "RayInteractable": {}
@@ -647,19 +811,17 @@
             ]
           },
           "components": {
-            "StemPad": {
+            "PerfPad": {
               "deck": "B",
-              "stem": "melody",
-              "active": true,
-              "armed": false
+              "slot": 3
             },
             "PokeInteractable": {},
             "RayInteractable": {}
           }
         },
         {
-          "id": "pad-b-10",
-          "name": "Pad B 10",
+          "id": "pad-b-5",
+          "name": "Pad B 5",
           "content": {
             "type": "asset",
             "asset": "performance-pad"
@@ -670,11 +832,19 @@
               0.054,
               0.113
             ]
+          },
+          "components": {
+            "PerfPad": {
+              "deck": "B",
+              "slot": 4
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "pad-b-11",
-          "name": "Pad B 11",
+          "id": "pad-b-6",
+          "name": "Pad B 6",
           "content": {
             "type": "asset",
             "asset": "performance-pad"
@@ -685,11 +855,19 @@
               0.054,
               0.113
             ]
+          },
+          "components": {
+            "PerfPad": {
+              "deck": "B",
+              "slot": 5
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "pad-b-12",
-          "name": "Pad B 12",
+          "id": "pad-b-7",
+          "name": "Pad B 7",
           "content": {
             "type": "asset",
             "asset": "performance-pad"
@@ -700,11 +878,19 @@
               0.054,
               0.113
             ]
+          },
+          "components": {
+            "PerfPad": {
+              "deck": "B",
+              "slot": 6
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
-          "id": "pad-b-13",
-          "name": "Pad B 13",
+          "id": "pad-b-8",
+          "name": "Pad B 8",
           "content": {
             "type": "asset",
             "asset": "performance-pad"
@@ -715,6 +901,14 @@
               0.054,
               0.113
             ]
+          },
+          "components": {
+            "PerfPad": {
+              "deck": "B",
+              "slot": 7
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -730,6 +924,14 @@
               0.0416,
               -0.135
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "A",
+              "control": "trim"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -745,6 +947,14 @@
               0.0416,
               -0.103
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "A",
+              "control": "high"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -760,6 +970,14 @@
               0.0416,
               -0.071
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "A",
+              "control": "mid"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -775,6 +993,14 @@
               0.0416,
               -0.039
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "A",
+              "control": "low"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -790,6 +1016,14 @@
               0.0416,
               -0.002
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "A",
+              "control": "filter"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -805,6 +1039,29 @@
               0.0416,
               0.034
             ]
+          },
+          "components": {
+            "Fader": {
+              "deck": "A",
+              "control": "channel",
+              "from": 0.106,
+              "to": 0.034,
+              "value": 1
+            },
+            "OneHandGrabbable": {
+              "rotate": false,
+              "translate": true,
+              "translateMin": [
+                -0.07,
+                0.0416,
+                0.034
+              ],
+              "translateMax": [
+                -0.07,
+                0.0416,
+                0.106
+              ]
+            }
           }
         },
         {
@@ -820,6 +1077,14 @@
               0.0416,
               -0.135
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "B",
+              "control": "trim"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -835,6 +1100,14 @@
               0.0416,
               -0.103
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "B",
+              "control": "high"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -850,6 +1123,14 @@
               0.0416,
               -0.071
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "B",
+              "control": "mid"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -865,6 +1146,14 @@
               0.0416,
               -0.039
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "B",
+              "control": "low"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -880,6 +1169,14 @@
               0.0416,
               -0.002
             ]
+          },
+          "components": {
+            "Knob": {
+              "deck": "B",
+              "control": "filter"
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -895,6 +1192,29 @@
               0.0416,
               0.034
             ]
+          },
+          "components": {
+            "Fader": {
+              "deck": "B",
+              "control": "channel",
+              "from": 0.106,
+              "to": 0.034,
+              "value": 1
+            },
+            "OneHandGrabbable": {
+              "rotate": false,
+              "translate": true,
+              "translateMin": [
+                0.07,
+                0.0416,
+                0.034
+              ],
+              "translateMax": [
+                0.07,
+                0.0416,
+                0.106
+              ]
+            }
           }
         },
         {
@@ -910,6 +1230,29 @@
               0.0416,
               0.14
             ]
+          },
+          "components": {
+            "Fader": {
+              "deck": "A",
+              "control": "crossfader",
+              "from": -0.054,
+              "to": 0.054,
+              "value": 0
+            },
+            "OneHandGrabbable": {
+              "rotate": false,
+              "translate": true,
+              "translateMin": [
+                -0.054,
+                0.0416,
+                0.14
+              ],
+              "translateMax": [
+                0.054,
+                0.0416,
+                0.14
+              ]
+            }
           }
         },
         {
@@ -925,6 +1268,17 @@
               0.056,
               0.14
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "fade",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -940,6 +1294,17 @@
               0.056,
               0.14
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "fade",
+              "deck": "B",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -955,6 +1320,17 @@
               0.05,
               0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "echo",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -970,6 +1346,17 @@
               0.05,
               0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "space",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {
@@ -985,6 +1372,17 @@
               0.058,
               -0.035
             ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "drop",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
           }
         },
         {

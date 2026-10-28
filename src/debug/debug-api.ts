@@ -1,3 +1,5 @@
+import { Vector3 } from '@iwsdk/core';
+import type { World } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
 import { renderOffline, renderStem, toPcm16Base64 } from '../audio/render/render.js';
 import type { DeckId } from '../audio/deck.js';
@@ -13,8 +15,12 @@ import type { Stem } from '../audio/track-model.js';
  * - renderOffline(trackId, bars, startBar): offline render + metrics
  * - renderStem(trackId, stem): a whole stem as base64 16-bit PCM (build script)
  * - timing(): when the last stem press happened and where in the bar it landed
+ * - worldPosition(name, offset?): world point of a named object's origin, or of
+ *   a point offset from it in its parent's space (where to drag a fader to)
+ * - engine(): the live engine, for mixer and pad calls; world: the ECS world
  */
-export function installDebugApi(): void {
+export function installDebugApi(world: World): void {
+  const scene = world.scene;
   const api = {
     state: () => JSON.parse(JSON.stringify(liveEngine().update())),
     start: () => liveEngine().start(),
@@ -39,6 +45,14 @@ export function installDebugApi(): void {
       return { pressAt: e.lastPressTime, commitAt, barPhase, barSeconds: deck.barSeconds / deck.rate };
     },
     engine: liveEngine,
+    world,
+    worldPosition: (name: string, offset: [number, number, number] = [0, 0, 0]) => {
+      const object = scene.getObjectByName(name);
+      if (object == null) throw new Error(`No object named ${name}`);
+      const p = new Vector3(...offset).add(object.position);
+      if (object.parent != null) object.parent.localToWorld(p);
+      return { x: p.x, y: p.y, z: p.z };
+    },
   };
   (window as unknown as { __dropRoom: typeof api }).__dropRoom = api;
 }

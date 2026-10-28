@@ -1,4 +1,4 @@
-import { BoxGeometry, CylinderGeometry, Group, Mesh, TorusGeometry } from '@iwsdk/core';
+import { BoxGeometry, CylinderGeometry, Group, Mesh, PlaneGeometry, TorusGeometry } from '@iwsdk/core';
 import type { Material, Object3D } from '@iwsdk/core';
 import { BODY, DECK, deckX, MIXER, MIXER_HALF, STRIP_X } from './console-layout.js';
 import { DECK_COLORS, glow, materials } from './console-materials.js';
@@ -57,6 +57,10 @@ function deck(id: 'A' | 'B'): Object3D {
   well.rotation.x = -Math.PI / 2;
   g.add(well);
   g.add(mesh(`Display${id}`, bevelBox(DECK.display.width, 0.003, DECK.display.depth, 0.001), materials.screen, deckX(DECK.display.x, id), T + 0.0025, DECK.display.z));
+  // flat screen face with clean UVs for the waveform texture (DisplaySystem)
+  const screen = mesh(`DisplayScreen${id}`, new PlaneGeometry(DECK.display.width - 0.006, DECK.display.depth - 0.005), materials.screen, deckX(DECK.display.x, id), T + 0.0042, DECK.display.z);
+  screen.rotation.x = -Math.PI / 2;
+  g.add(screen);
   g.add(slot(`Tempo${id}`, deckX(DECK.tempo.x, id), DECK.tempo.z, 'z', DECK.tempo.length));
   // deck colour accent along the front edge
   g.add(mesh(`Deck${id}Accent`, new BoxGeometry(0.17, 0.004, 0.003), glow(DECK_COLORS[id], 1.4), cx, T * 0.55, BODY.depth / 2 + 0.0004));

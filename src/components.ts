@@ -1,4 +1,4 @@
 import { defineComponents } from '@iwsdk/core';
-import { ConsoleRoot, JogWheel, MusicState, PushButton, StemPad } from './console-components.js';
+import { ConsoleRoot, Fader, JogWheel, Knob, MusicState, PerfPad, PushButton } from './console-components.js';
 
-export default defineComponents([StemPad, PushButton, JogWheel, ConsoleRoot, MusicState]);
+export default defineComponents([PerfPad, PushButton, Knob, Fader, JogWheel, ConsoleRoot, MusicState]);

@@ -1,4 +1,5 @@
 import { house } from '../generators/house.js';
+import { techno } from '../generators/techno.js';
 import type { Generator, Genre, TrackDef } from '../track-model.js';
 
 export const WARM_START: TrackDef = {
@@ -23,11 +24,34 @@ export const WARM_START: TrackDef = {
   seed: 124,
 };
 
-export const TRACKS: Record<string, TrackDef> = {
-  [WARM_START.id]: WARM_START,
+export const CONCRETE: TrackDef = {
+  id: 'concrete',
+  name: 'Concrete',
+  genre: 'techno',
+  mood: 'dark, driving',
+  bpm: 128,
+  bpmRange: [120, 136],
+  key: { root: 9, mode: 'minor' }, // A minor, 8A: mixes in key with Warm Start
+  energy: 4,
+  swing: 0,
+  form: [
+    { section: 'intro', bars: 8 },
+    { section: 'build', bars: 8 },
+    { section: 'drop', bars: 16 },
+    { section: 'break', bars: 8 },
+    { section: 'build', bars: 8 },
+    { section: 'drop', bars: 16 },
+    { section: 'outro', bars: 8 },
+  ],
+  seed: 128,
 };
 
-export const GENERATORS: Partial<Record<Genre, Generator>> = { house };
+export const TRACKS: Record<string, TrackDef> = {
+  [WARM_START.id]: WARM_START,
+  [CONCRETE.id]: CONCRETE,
+};
+
+export const GENERATORS: Partial<Record<Genre, Generator>> = { house, techno };
 
 export function generatorFor(track: TrackDef): Generator {
   const generator = GENERATORS[track.genre];

@@ -1,13 +1,25 @@
 import * as Tone from 'tone';
-import { Deck, TEMPO_RANGE } from './deck.js';
+import { Deck, HOT_CUES, LOOP_BARS, TEMPO_RANGE } from './deck.js';
 import type { DeckId } from './deck.js';
 import { Master } from './master.js';
-import { TRACKS, WARM_START } from './tracks/catalog.js';
+import { Channel, clamp, crossfadeGains, MasterFx } from './mixer.js';
+import type { Band } from './mixer.js';
+import { CONCRETE, TRACKS, WARM_START } from './tracks/catalog.js';
 import { STEMS } from './track-model.js';
 import type { Section, Stem } from './track-model.js';
 
+/** What the 8 pads of a deck do (PLAN-DJ-UPGRADE §3.2). */
+export const PAD_MODES = ['stems', 'cues', 'loop'] as const;
+export type PadMode = (typeof PAD_MODES)[number];
+/** Mixer knobs, top to bottom of a channel strip. */
+export const KNOBS = ['trim', 'high', 'mid', 'low', 'filter'] as const;
+export type KnobControl = (typeof KNOBS)[number];
+/** 33⅓ rpm in radians per second: one jog turn = 1.8 s of track. */
+export const JOG_SPIN = ((100 / 3) * Math.PI * 2) / 60;
+
 export interface DeckView {
   trackId: string;
+  trackName: string;
   status: Deck['status'];
   playing: boolean;
   /** a quantised start is waiting for its bar line */
@@ -25,6 +37,17 @@ export interface DeckView {
   stems: number[];
   /** a toggle is waiting for the next bar or has not been heard yet */
   armed: boolean[];
+  soloed: number;
+  padMode: PadMode;
+  hotCues: number[];
+  loopBars: number;
+  roll: number;
+  /** knob values -1..1 in KNOBS order; kills for high, mid, low */
+  knobs: number[];
+  kills: boolean[];
+  fader: number;
+  /** post-fader channel level, 0..1 */
+  level: number;
 }
 
 export interface EngineState {
@@ -37,12 +60,19 @@ export interface EngineState {
   step: number;
   latencyMs: number;
   level: number;
+  /** -1 = all A, +1 = all B */
+  crossfader: number;
+  /** side an A/B end button is fading towards, '' when idle */
+  fadingTo: DeckId | '';
+  echo: boolean;
+  space: boolean;
   A: DeckView;
   B: DeckView;
 }
 
 const deckView = (): DeckView => ({
   trackId: '',
+  trackName: '',
   status: 'empty',
   playing: false,
   playArmed: false,
@@ -55,19 +85,32 @@ const deckView = (): DeckView => ({
   phraseBar: 0,
   stems: [1, 1, 1, 1],
   armed: [false, false, false, false],
+  soloed: -1,
+  padMode: 'stems',
+  hotCues: new Array(HOT_CUES).fill(-1),
+  loopBars: 0,
+  roll: -1,
+  knobs: [0, 0, 0, 0, 0],
+  kills: [false, false, false],
+  fader: 1,
+  level: 0,
 });
 
 const LOOK_AHEAD = 0.12;
+const KILL_BANDS: readonly Band[] = ['high', 'mid', 'low'];
 
 /**
  * The facade every system talks to (PLAN §6.3). Two decks play pre-rendered
- * tracks into the master bus. A scheduler on the context's own ticker (a
- * worker timer, so it keeps time even when frames are slow) applies armed
- * changes just before the bar line they belong to.
+ * tracks through mixer channels and the crossfader into the master bus. A
+ * scheduler on the context's own ticker (a worker timer, so it keeps time even
+ * when frames are slow) applies armed changes just before their bar line.
  */
 export class Engine {
   readonly master: Master;
+  readonly fx: MasterFx;
   readonly decks: Record<DeckId, Deck>;
+  readonly channels: Record<DeckId, Channel>;
+  readonly padModes: Record<DeckId, PadMode> = { A: 'stems', B: 'stems' };
   readonly state: EngineState = {
     running: false,
     master: 'A',
@@ -77,24 +120,39 @@ export class Engine {
     step: 0,
     latencyMs: 0,
     level: 0,
+    crossfader: 0,
+    fadingTo: '',
+    echo: false,
+    space: false,
     A: deckView(),
     B: deckView(),
   };
   /** audio time of the last stem press (tests) */
   lastPressTime = -1;
+  private crossfader = 0;
+  private fade: { from: number; to: number; start: number; seconds: number } | null = null;
   private preloaded: Promise<void> | null = null;
   private readonly tick = () => {
     const now = this.context.currentTime;
     const heard = this.audibleTime();
     this.decks.A.tick(now, LOOK_AHEAD, heard);
     this.decks.B.tick(now, LOOK_AHEAD, heard);
+    if (this.fade != null) {
+      const t = Math.min(1, (now - this.fade.start) / this.fade.seconds);
+      this.applyCrossfader(this.fade.from + (this.fade.to - this.fade.from) * t);
+      if (t >= 1) this.fade = null;
+    }
   };
 
   constructor(readonly context: Tone.BaseContext) {
     this.master = new Master(context);
+    this.fx = new MasterFx(context, this.master.input);
     this.decks = { A: new Deck(context, 'A'), B: new Deck(context, 'B') };
-    this.decks.A.output.connect(this.master.input);
-    this.decks.B.output.connect(this.master.input);
+    this.channels = { A: new Channel(context), B: new Channel(context) };
+    for (const id of ['A', 'B'] as const) {
+      this.decks[id].output.connect(this.channels[id].input);
+      this.channels[id].output.fan(this.master.input, this.fx.input);
+    }
     context.on('tick', this.tick);
   }
 
@@ -109,10 +167,11 @@ export class Engine {
     return this.context.currentTime - this.latency;
   }
 
-  /** The deck others follow: the one playing (A when both do, until the
-   * crossfader decides it). */
+  /** The deck others follow: the one playing; when both play, the one the
+   * crossfader favours (A at the centre). */
   masterDeck(): Deck {
     const { A, B } = this.decks;
+    if (A.isRunning && B.isRunning) return this.crossfader > 0.05 ? B : A;
     return !A.isRunning && B.isRunning ? B : A;
   }
 
@@ -127,9 +186,10 @@ export class Engine {
   }
 
   /** Fetch and decode the opening tracks before the player asks for music;
-   * decoding works on a suspended context, so this needs no user gesture. */
+   * decoding works on a suspended context, so this needs no user gesture.
+   * Warm Start plays on A; Concrete waits on B for the first mix. */
   preload(): Promise<void> {
-    this.preloaded ??= Promise.all([this.loadTrack('A', WARM_START.id), this.loadTrack('B', WARM_START.id)]).then(() => {});
+    this.preloaded ??= Promise.all([this.loadTrack('A', WARM_START.id), this.loadTrack('B', CONCRETE.id)]).then(() => {});
     return this.preloaded;
   }
 
@@ -142,6 +202,8 @@ export class Engine {
     const now = this.context.currentTime;
     this.decks.A.play(now + 0.05, this.audibleTime());
   }
+
+  // ---- transport ---------------------------------------------------------
 
   /** PLAY/PAUSE. Pause is instant; play starts on the other deck's next bar
    * line when it is playing (quantised start), otherwise at once. */
@@ -173,13 +235,120 @@ export class Engine {
 
   /** Tempo fader, -1..1 → ±8 %. */
   setTempo(id: DeckId, fader: number): void {
-    const clamped = Math.max(-1, Math.min(1, fader));
-    this.decks[id].setRate(1 + clamped * TEMPO_RANGE, this.context.currentTime);
+    this.decks[id].setRate(1 + clamp(fader, -1, 1) * TEMPO_RANGE, this.context.currentTime);
+  }
+
+  /** Jog wheel turned by `radians` (clockwise positive) over `dt` seconds:
+   * playing → pitch bend to nudge into phase; paused → move the playhead as a
+   * record would (one turn = 1.8 s). Call with 0 on release. */
+  jog(id: DeckId, radians: number, dt: number): void {
+    const deck = this.decks[id];
+    if (deck.isRunning) {
+      const turnsPerSecond = dt > 0 ? radians / dt / (Math.PI * 2) : 0;
+      deck.setBend(clamp(turnsPerSecond * 0.15, -0.2, 0.2), this.context.currentTime);
+    } else {
+      deck.scrub(radians / JOG_SPIN);
+    }
+  }
+
+  // ---- pads ----------------------------------------------------------------
+
+  setPadMode(id: DeckId, mode: PadMode): void {
+    this.decks[id].endRoll(this.context.currentTime);
+    this.padModes[id] = mode;
+  }
+
+  /** A performance pad pressed (down) or released. Slots 0-3 are the top row.
+   * STEMS: toggle / solo a stem. CUES: hot cue / delete it. LOOP: 1-8 bar
+   * loops / beat rolls held under the finger. */
+  pad(id: DeckId, slot: number, down: boolean): void {
+    const deck = this.decks[id];
+    const now = this.context.currentTime;
+    const top = slot < 4;
+    const i = slot % 4;
+    switch (this.padModes[id]) {
+      case 'stems':
+        if (!down) return;
+        this.lastPressTime = now;
+        if (top) deck.toggleStem(STEMS[i]);
+        else deck.solo(STEMS[i]);
+        return;
+      case 'cues':
+        if (!down) return;
+        if (top) deck.hotCue(i, now);
+        else deck.deleteHotCue(i);
+        return;
+      case 'loop':
+        if (top && down) deck.toggleLoop(LOOP_BARS[i], now);
+        else if (!top && down) deck.startRoll(i, now);
+        else if (!top && deck.roll === i) deck.endRoll(now);
+    }
   }
 
   toggleStem(deck: DeckId, stem: Stem): void {
     this.lastPressTime = this.context.currentTime;
     this.decks[deck].toggleStem(stem);
+  }
+
+  // ---- mixer ---------------------------------------------------------------
+
+  /** A mixer knob turned to v (-1..1). */
+  setKnob(id: DeckId, knob: KnobControl, v: number): void {
+    const channel = this.channels[id];
+    if (knob === 'trim') channel.setTrim(v);
+    else if (knob === 'filter') channel.setFilter(v);
+    else channel.setEq(knob, v);
+  }
+
+  knob(id: DeckId, knob: KnobControl): number {
+    const channel = this.channels[id];
+    return knob === 'trim' ? channel.trim : knob === 'filter' ? channel.filter : channel.eq[knob];
+  }
+
+  /** A knob tapped: EQ bands kill/restore (isolator); TRIM and FILTER snap
+   * back to the centre. */
+  tapKnob(id: DeckId, knob: KnobControl): void {
+    const channel = this.channels[id];
+    if (knob === 'trim') channel.setTrim(0);
+    else if (knob === 'filter') channel.setFilter(0);
+    else channel.toggleKill(knob);
+  }
+
+  setFader(id: DeckId, v: number): void {
+    this.channels[id].setFader(v);
+  }
+
+  /** Crossfader moved by hand: cancels an A/B auto-fade. */
+  setCrossfader(x: number): void {
+    this.fade = null;
+    this.applyCrossfader(x);
+  }
+
+  private applyCrossfader(x: number): void {
+    this.crossfader = clamp(x, -1, 1);
+    const [a, b] = crossfadeGains(this.crossfader);
+    this.channels.A.setCrossfade(a);
+    this.channels.B.setCrossfade(b);
+  }
+
+  /** A/B end button: glide the crossfader all the way over in 4 bars of the
+   * master tempo; pressing the same end again stops the glide. */
+  fadeTo(side: DeckId): void {
+    const to = side === 'A' ? -1 : 1;
+    if (this.fade?.to === to) {
+      this.fade = null;
+      return;
+    }
+    const bpm = this.masterDeck().bpm || WARM_START.bpm;
+    this.fade = { from: this.crossfader, to, start: this.context.currentTime, seconds: (4 * 240) / bpm };
+  }
+
+  toggleEcho(): void {
+    this.fx.toggleEcho(this.masterDeck().bpm || WARM_START.bpm);
+  }
+
+  toggleSpace(): void {
+    this.fx.toggleSpace();
   }
 
   click(high = true): void {
@@ -195,6 +364,10 @@ export class Engine {
     s.bpm = master.bpm || WARM_START.bpm;
     s.latencyMs = this.latency * 1000;
     s.level = this.master.level;
+    s.crossfader = this.crossfader;
+    s.fadingTo = this.fade == null ? '' : this.fade.to < 0 ? 'A' : 'B';
+    s.echo = this.fx.echo;
+    s.space = this.fx.space;
     if (master.track != null) {
       const beats = master.position(heard) / (master.barSeconds / 4);
       s.bar = Math.floor(beats / 4);
@@ -203,8 +376,10 @@ export class Engine {
     }
     for (const id of ['A', 'B'] as const) {
       const deck = this.decks[id];
+      const channel = this.channels[id];
       const view = s[id];
       view.trackId = deck.track?.id ?? '';
+      view.trackName = deck.track?.name ?? '';
       view.status = deck.status;
       view.playing = deck.playing.get(heard);
       view.playArmed = deck.playing.pending(heard);
@@ -219,14 +394,26 @@ export class Engine {
         view.stems[i] = deck.stems[i].get(heard) ? 1 : 0;
         view.armed[i] = deck.armed(i) || deck.stems[i].pending(heard);
       }
+      view.soloed = deck.soloed();
+      view.padMode = this.padModes[id];
+      for (let i = 0; i < HOT_CUES; i++) view.hotCues[i] = deck.hotCues[i];
+      view.loopBars = deck.loopBars;
+      view.roll = deck.roll;
+      for (let i = 0; i < KNOBS.length; i++) view.knobs[i] = this.knob(id, KNOBS[i]);
+      for (let i = 0; i < KILL_BANDS.length; i++) view.kills[i] = channel.kills[KILL_BANDS[i]];
+      view.fader = channel.fader;
+      view.level = channel.level;
     }
     return s;
   }
 
   dispose(): void {
     this.context.off('tick', this.tick);
-    this.decks.A.dispose();
-    this.decks.B.dispose();
+    for (const id of ['A', 'B'] as const) {
+      this.decks[id].dispose();
+      this.channels[id].dispose();
+    }
+    this.fx.dispose();
     this.master.dispose();
   }
 }

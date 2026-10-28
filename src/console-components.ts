@@ -1,21 +1,55 @@
 import { createComponent, Types } from '@iwsdk/core';
 
 export const Decks = { A: 'A', B: 'B' } as const;
-export const StemNames = { drums: 'drums', bass: 'bass', chords: 'chords', melody: 'melody' } as const;
-export const ButtonActions = { play: 'play', cue: 'cue', sync: 'sync', start: 'start' } as const;
+export const ButtonActions = {
+  play: 'play',
+  cue: 'cue',
+  sync: 'sync',
+  start: 'start',
+  mode: 'mode',
+  echo: 'echo',
+  space: 'space',
+  drop: 'drop',
+  fade: 'fade',
+} as const;
+export const KnobControls = { trim: 'trim', high: 'high', mid: 'mid', low: 'low', filter: 'filter' } as const;
+export const FaderControls = { channel: 'channel', tempo: 'tempo', crossfader: 'crossfader' } as const;
 
-/** A poke pad that toggles one stem of one deck on the next bar. */
-export const StemPad = createComponent('StemPad', {
+/** One of a deck's 8 performance pads (slots 0-3 top row). What it does and
+ * how it lights depend on the deck's pad mode; the mirror system sets the look. */
+export const PerfPad = createComponent('PerfPad', {
   deck: { type: Types.Enum, enum: Decks, default: Decks.A },
-  stem: { type: Types.Enum, enum: StemNames, default: StemNames.drums },
-  active: { type: Types.Boolean, default: true, help: 'Stem is heard (mirrored from the engine)' },
-  armed: { type: Types.Boolean, default: false, help: 'A toggle waits for the next bar' },
+  slot: { type: Types.Int8, default: 0, min: 0, max: 7 },
+  color: { type: Types.Color, default: [1, 1, 1, 1] },
+  lit: { type: Types.Float32, default: 0, help: 'Glow 0..1 (mirrored from the engine)' },
+  armed: { type: Types.Boolean, default: false, help: 'A change waits for the next bar' },
 });
 
-/** A poke button with a single action, e.g. PLAY for a deck or Start. */
+/** A mixer knob: pinch and twist to turn, poke to kill the band (EQ) or
+ * snap back to the centre (TRIM, FILTER). */
+export const Knob = createComponent('Knob', {
+  deck: { type: Types.Enum, enum: Decks, default: Decks.A },
+  control: { type: Types.Enum, enum: KnobControls, default: KnobControls.trim },
+  value: { type: Types.Float32, default: 0, help: '-1..1 (mirrored from the engine)' },
+  killed: { type: Types.Boolean, default: false },
+});
+
+/** A fader cap that slides along its slot with a pinch. `from`/`to` are its
+ * local positions (x for the crossfader, z otherwise) at the low and high end. */
+export const Fader = createComponent('Fader', {
+  deck: { type: Types.Enum, enum: Decks, default: Decks.A },
+  control: { type: Types.Enum, enum: FaderControls, default: FaderControls.channel },
+  from: { type: Types.Float32, default: 0 },
+  to: { type: Types.Float32, default: 0 },
+  value: { type: Types.Float32, default: 0, help: 'channel 0..1, tempo and crossfader -1..1' },
+});
+
+/** A poke button with a single action, e.g. PLAY for a deck or Start;
+ * `index` picks the pad mode for mode buttons. */
 export const PushButton = createComponent('PushButton', {
   action: { type: Types.Enum, enum: ButtonActions, default: ButtonActions.play },
   deck: { type: Types.Enum, enum: Decks, default: Decks.A },
+  index: { type: Types.Int8, default: 0 },
   lit: { type: Types.Boolean, default: false },
   armed: { type: Types.Boolean, default: false },
 });
@@ -48,6 +82,9 @@ export const MusicState = createComponent('MusicState', {
   bpmB: { type: Types.Float32, default: 0 },
   positionA: { type: Types.Float32, default: 0, help: 'Playhead, track seconds' },
   positionB: { type: Types.Float32, default: 0 },
+  crossfader: { type: Types.Float32, default: 0, help: '-1 = all A, +1 = all B' },
+  levelA: { type: Types.Float32, default: 0, help: 'Channel meter 0..1' },
+  levelB: { type: Types.Float32, default: 0 },
   latencyMs: { type: Types.Float32, default: 0 },
   level: { type: Types.Float32, default: 0 },
 });

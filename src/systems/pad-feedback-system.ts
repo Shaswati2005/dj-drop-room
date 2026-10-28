@@ -1,12 +1,10 @@
 import { Color, createSystem, Mesh, MeshStandardMaterial, Pressed } from '@iwsdk/core';
 import type { Entity, Object3D } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
-import { ButtonActions, PushButton, StemPad } from '../console-components.js';
+import { ButtonActions, PerfPad, PushButton } from '../console-components.js';
 
 const PRESS_DEPTH = 0.007; // m, PLAN §2.2
 const AMBER = new Color('#FFB020');
-/** Stem colours (DESIGN.md): every pad is one asset, lit in its stem's colour. */
-const STEM_COLORS: Record<string, string> = { drums: '#FF7A2E', bass: '#2E8BFF', chords: '#A65CFF', melody: '#2EFFB0' };
 
 interface PadVisual {
   cap: Object3D;
@@ -20,7 +18,7 @@ interface PadVisual {
 /** Hover-free pad feedback: lit when on, pulsing at beat rate while armed,
  * a flash when the change is heard, and a 7 mm press. */
 export class PadFeedbackSystem extends createSystem({
-  pads: { required: [StemPad] },
+  pads: { required: [PerfPad] },
   buttons: { required: [PushButton] },
 }) {
   private visuals = new Map<number, PadVisual>();
@@ -46,9 +44,7 @@ export class PadFeedbackSystem extends createSystem({
     const v: PadVisual = {
       cap,
       material,
-      color: entity.hasComponent(StemPad)
-        ? new Color(STEM_COLORS[entity.getValue(StemPad, 'stem') as string] ?? '#FFFFFF')
-        : material.emissive.clone(),
+      color: material.emissive.clone(),
       restY: cap.position.y,
       wasActive: true,
       flash: 0,
@@ -66,11 +62,14 @@ export class PadFeedbackSystem extends createSystem({
     for (const entity of this.queries.pads.entities) {
       const v = this.visual(entity);
       if (v == null) continue;
-      const active = entity.getValue(StemPad, 'active') === true;
-      const armed = entity.getValue(StemPad, 'armed') === true;
+      // colour and glow come from the deck's pad mode (mirror system)
+      const c = entity.getVectorView(PerfPad, 'color');
+      v.color.setRGB(c[0], c[1], c[2]);
+      const lit = entity.getValue(PerfPad, 'lit') ?? 0;
+      const active = lit > 0.5;
       if (active !== v.wasActive) v.flash = 1;
       v.wasActive = active;
-      this.apply(entity, v, active ? 1 : 0.06, armed, beatOn, ease, delta);
+      this.apply(entity, v, lit, entity.getValue(PerfPad, 'armed') === true, beatOn, ease, delta);
       v.material.emissive.copy(v.color);
     }
     for (const entity of this.queries.buttons.entities) {

@@ -19,24 +19,50 @@ const node = (id: string, asset: string, x: number, y: number, z: number, compon
   transform: { position: [r(x), r(y), r(z)] },
   ...(components ? { components } : {}),
 });
-const button = (deck: 'A' | 'B', action: string) => ({ PushButton: { action, deck, lit: false, armed: false }, ...poke });
+const button = (deck: 'A' | 'B', action: string, index = 0) => ({ PushButton: { action, deck, index, lit: false, armed: false }, ...poke });
+// pinch to slide along one local axis, nothing else
+const slider = (x: number, y: number, z: number, axis: 'x' | 'z', a: number, b: number) => ({
+  OneHandGrabbable: {
+    rotate: false,
+    translate: true,
+    translateMin: [axis === 'x' ? r(Math.min(a, b)) : r(x), r(y), axis === 'z' ? r(Math.min(a, b)) : r(z)],
+    translateMax: [axis === 'x' ? r(Math.max(a, b)) : r(x), r(y), axis === 'z' ? r(Math.max(a, b)) : r(z)],
+  },
+});
+// pinch and twist about the knob's own axis
+const twist = (limit: number) => ({ OneHandGrabbable: { rotate: true, translate: false, rotateMin: [0, -limit, 0], rotateMax: [0, limit, 0] } });
+
+/** Tempo fader: DJ-player convention, toward the player = faster. */
+function tempoFader(id: 'A' | 'B'): Node {
+  const x = deckX(DECK.tempo.x, id);
+  const slow = DECK.tempo.z - DECK.tempo.length * 0.45;
+  const fast = DECK.tempo.z + DECK.tempo.length * 0.45;
+  return node(`tempo-${id.toLowerCase()}`, 'tempo-fader-cap', x, SURFACE, DECK.tempo.z, {
+    Fader: { deck: id, control: 'tempo', from: r(slow), to: r(fast), value: 0 },
+    ...slider(x, SURFACE, DECK.tempo.z, 'z', slow, fast),
+  });
+}
 
 function deck(id: 'A' | 'B'): Node[] {
   const d = id.toLowerCase();
   const x = (v: number) => deckX(v, id);
   const nodes: Node[] = [
-    node(`jog-${d}`, `jog-wheel-${d}`, x(DECK.jog.x), SURFACE, DECK.jog.z, { JogWheel: { deck: id } }),
-    node(`tempo-${d}`, 'tempo-fader-cap', x(DECK.tempo.x), SURFACE, DECK.tempo.z),
+    node(`jog-${d}`, `jog-wheel-${d}`, x(DECK.jog.x), SURFACE, DECK.jog.z, { JogWheel: { deck: id }, ...twist(1000) }),
+    tempoFader(id),
     node(`sync-${d}`, 'sync-button', x(DECK.sync[0]), BODY.top + PRESS_HEIGHT.small, DECK.sync[1], button(id, 'sync')),
     node(`cue-${d}`, 'cue-button', x(DECK.cue[0]), BODY.top + PRESS_HEIGHT.round, DECK.cue[1], button(id, 'cue')),
     node(`play-${d}`, 'play-button', x(DECK.play[0]), BODY.top + PRESS_HEIGHT.round, DECK.play[1], button(id, 'play')),
   ];
-  DECK.modes.forEach(([mx, mz], i) => nodes.push(node(`mode-${d}-${i}`, 'mode-button', x(mx), BODY.top + PRESS_HEIGHT.small, mz)));
+  ['stems', 'cues', 'loop'].forEach((mode, i) => {
+    const [mx, mz] = DECK.modes[i];
+    nodes.push(node(`mode-${d}-${mode}`, 'mode-button', x(mx), BODY.top + PRESS_HEIGHT.small, mz, button(id, 'mode', i)));
+  });
   DECK.pads.zs.forEach((pz, row) =>
     DECK.pads.xs.forEach((px, col) => {
-      const stem = row === 0 ? STEMS[col] : null;
-      const components = stem ? { StemPad: { deck: id, stem, active: true, armed: false }, ...poke } : undefined;
-      nodes.push(node(stem ? `pad-${d}-${stem}` : `pad-${d}-${row}${col}`, 'performance-pad', x(px), BODY.top + PRESS_HEIGHT.pad, pz, components));
+      // the top row is named for its STEMS-mode job; tests target those names
+      const name = row === 0 ? `pad-${d}-${STEMS[col]}` : `pad-${d}-${row * 4 + col + 1}`;
+      const components = { PerfPad: { deck: id, slot: row * 4 + col }, ...poke };
+      nodes.push(node(name, 'performance-pad', x(px), BODY.top + PRESS_HEIGHT.pad, pz, components));
     }),
   );
   return nodes;
@@ -47,16 +73,22 @@ function mixer(): Node[] {
   for (const id of ['A', 'B'] as const) {
     const sx = id === 'A' ? -STRIP_X : STRIP_X;
     const d = id.toLowerCase();
-    for (const k of MIXER.knobs) nodes.push(node(`${k.name}-${d}`, k.large ? 'knob-large' : 'knob-small', sx, SURFACE, k.z));
-    // channel faders start fully up (away from the player)
-    nodes.push(node(`fader-${d}`, 'channel-fader-cap', sx, SURFACE, MIXER.fader.z - MIXER.fader.length * 0.45));
+    for (const k of MIXER.knobs) {
+      const control = k.name === 'hi' ? 'high' : k.name;
+      nodes.push(node(`${k.name}-${d}`, k.large ? 'knob-large' : 'knob-small', sx, SURFACE, k.z, { Knob: { deck: id, control }, ...poke }));
+    }
+    // channel faders: down (toward the player) is silent, up is full
+    const down = MIXER.fader.z + MIXER.fader.length * 0.45;
+    const up = MIXER.fader.z - MIXER.fader.length * 0.45;
+    nodes.push(node(`fader-${d}`, 'channel-fader-cap', sx, SURFACE, up, { Fader: { deck: id, control: 'channel', from: r(down), to: r(up), value: 1 }, ...slider(sx, SURFACE, up, 'z', down, up) }));
   }
-  nodes.push(node('crossfader', 'crossfader-cap', 0, SURFACE, MIXER.crossfader.z));
-  nodes.push(node('xf-end-a', 'crossfade-end-a', MIXER.ends[0], BODY.top + PRESS_HEIGHT.round, MIXER.crossfader.z));
-  nodes.push(node('xf-end-b', 'crossfade-end-b', MIXER.ends[1], BODY.top + PRESS_HEIGHT.round, MIXER.crossfader.z));
-  nodes.push(node('fx-echo', 'fx-button', MIXER.fx[0][0], BODY.top + PRESS_HEIGHT.small, MIXER.fx[0][1]));
-  nodes.push(node('fx-space', 'fx-button', MIXER.fx[1][0], BODY.top + PRESS_HEIGHT.small, MIXER.fx[1][1]));
-  nodes.push(node('drop', 'drop-button', MIXER.drop[0], BODY.top + PRESS_HEIGHT.drop, MIXER.drop[1]));
+  const half = MIXER.crossfader.length * 0.45;
+  nodes.push(node('crossfader', 'crossfader-cap', 0, SURFACE, MIXER.crossfader.z, { Fader: { deck: 'A', control: 'crossfader', from: r(-half), to: r(half), value: 0 }, ...slider(0, SURFACE, MIXER.crossfader.z, 'x', -half, half) }));
+  nodes.push(node('xf-end-a', 'crossfade-end-a', MIXER.ends[0], BODY.top + PRESS_HEIGHT.round, MIXER.crossfader.z, button('A', 'fade')));
+  nodes.push(node('xf-end-b', 'crossfade-end-b', MIXER.ends[1], BODY.top + PRESS_HEIGHT.round, MIXER.crossfader.z, button('B', 'fade')));
+  nodes.push(node('fx-echo', 'fx-button', MIXER.fx[0][0], BODY.top + PRESS_HEIGHT.small, MIXER.fx[0][1], button('A', 'echo')));
+  nodes.push(node('fx-space', 'fx-button', MIXER.fx[1][0], BODY.top + PRESS_HEIGHT.small, MIXER.fx[1][1], button('A', 'space')));
+  nodes.push(node('drop', 'drop-button', MIXER.drop[0], BODY.top + PRESS_HEIGHT.drop, MIXER.drop[1], button('A', 'drop')));
   // hovers over DROP until the music starts, then hides
   nodes.push(node('start-pad', 'start-pad', MIXER.drop[0], BODY.top + 0.04, MIXER.drop[1], { PushButton: { action: 'start', deck: 'A', lit: true, armed: false }, ...poke }));
   return nodes;

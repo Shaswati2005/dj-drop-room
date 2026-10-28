@@ -2,6 +2,7 @@
 // with hands, poke Start, poke deck A's Bass pad and watch the bass leave on
 // the next bar, poke it back, and stop/start deck A with PLAY.
 import { execFileSync, spawn } from 'node:child_process';
+import fs from 'node:fs';
 
 const cwd = process.argv[2] ?? process.cwd();
 const q = (s) => `'${JSON.stringify(s)}'`;
@@ -38,7 +39,7 @@ run(['browser', 'reload']);
 sleep(6);
 for (let i = 0; i < 40; i++) {
   try {
-    if (run(['ecs', 'find'], { withComponents: ['StemPad'] }).entities.length === 8) break;
+    if (run(['ecs', 'find'], { withComponents: ['PerfPad'] }).entities.length === 16) break;
   } catch {}
   sleep(1);
 }
@@ -72,10 +73,10 @@ check('all deck A stems on', m.stemsA.every((v) => v === 1), JSON.stringify(m.st
 
 // 3. poke Bass while sampling: armed first, bass leaves on the next bar line
 press('Pad A Bass');
-const armed = values(bassA, 'StemPad');
+const armed = values(bassA, 'PerfPad');
 // CLI round trips take ~2 s, about a bar, so the change may already be heard
 const seen = music();
-check('Bass pad armed after the poke (or already applied)', (armed.armed === true && armed.active === true) || seen.stemsA[1] === 0);
+check('Bass pad armed after the poke (or already applied)', (armed.armed === true && armed.lit > 0.5) || seen.stemsA[1] === 0);
 let off = null;
 for (let i = 0; i < 20 && off == null; i++) {
   const s = music();
@@ -88,8 +89,8 @@ if (off) {
   const wait = t.commitAt - t.pressAt;
   check('...applied exactly on the next bar line', Math.min(t.barPhase, 1 - t.barPhase) < 0.005 && wait > 0 && wait <= t.barSeconds + 0.2,
     `pressed at ${t.pressAt.toFixed(2)} s, applied at ${t.commitAt.toFixed(2)} s (bar = ${t.barSeconds.toFixed(2)} s, bar phase ${t.barPhase.toFixed(4)})`);
-  const pad = values(bassA, 'StemPad');
-  check('pad shows off and no longer armed', pad.active === false && pad.armed === false);
+  const pad = values(bassA, 'PerfPad');
+  check('pad shows off and no longer armed', pad.lit < 0.5 && pad.armed === false);
 }
 
 // 4. pad depress: hold a poke and screenshot mid-hold
@@ -116,5 +117,87 @@ sleep(2.6);
 m = music();
 // the playhead moved on from the pause point (it may have wrapped into the outro loop)
 check('PLAY resumes deck A', m.playingA === true && Math.abs(m.positionA - paused.positionA) > 0.5, `paused at ${paused.positionA.toFixed(2)} s, now ${m.positionA.toFixed(2)} s`);
+
+// 7. mixer by hand (Days 5-6): poke a knob to kill its band, poke the pad-mode
+// and crossfader-end buttons, pinch-drag a channel fader
+const knob = find('^Low A$');
+press('Low A');
+sleep(0.5);
+check('poking the LOW knob kills the band', values(knob, 'Knob').killed === true);
+press('Low A');
+sleep(0.5);
+check('poking it again brings the bass back', values(knob, 'Knob').killed === false);
+
+press('Mode A Loop');
+sleep(0.4);
+check('LOOP mode button lights', values(find('^Mode A Loop$'), 'PushButton').lit === true);
+press('Pad A Bass'); // the 2nd top pad is a 2-bar loop in LOOP mode
+sleep(0.4);
+check('in LOOP mode the 2nd pad starts a 2-bar loop', values(bassA, 'PerfPad').lit === 1);
+press('Pad A Bass');
+press('Mode A Stems');
+sleep(0.4);
+check('back in STEMS mode the pad shows the stem again', values(bassA, 'PerfPad').lit === 1 && values(find('^Mode A Stems$'), 'PushButton').lit === true);
+
+press('Xf End B');
+sleep(2);
+const x1 = music().crossfader;
+check('B end button glides the crossfader toward B', x1 > 0.2, `x = ${x1.toFixed(2)}`);
+press('Xf End A');
+sleep(4.5);
+check('A end button glides it back', music().crossfader < x1 - 0.3, `x = ${music().crossfader.toFixed(2)}`);
+
+// fader cap world position: console transform applied to the cap's local position
+const scene = JSON.parse(fs.readFileSync(cwd + '/public/scenes/droproom.iwsdk.scene.json', 'utf8'));
+const faderNode = scene.nodes.find((n) => n.id === 'console').children.find((n) => n.id === 'fader-a');
+const ct = values(consoleIndex, 'Transform');
+const toWorld = ([x, y, z]) => {
+  const [qx, qy, qz, qw] = ct.orientation;
+  // v' = v + w·t + q×t with t = 2·(q×v)
+  const tx = 2 * (qy * z - qz * y);
+  const ty = 2 * (qz * x - qx * z);
+  const tz = 2 * (qx * y - qy * x);
+  return {
+    x: ct.position[0] + x + qw * tx + (qy * tz - qz * ty),
+    y: ct.position[1] + y + qw * ty + (qz * tx - qx * tz),
+    z: ct.position[2] + z + qw * tz + (qx * ty - qy * tx),
+  };
+};
+const [fx, fy] = faderNode.transform.position;
+const { from, to } = faderNode.components.Fader;
+const fader = find('^Fader A$');
+// let go of anything the A/B pokes may have closed on (the crossfader sits beside them)
+run(['xr', 'run-sequence'], { device: 'hand-right', steps: [{ pinch: 0, duration: 0.15 }, { anchor: 'wrist', position: { relativeTo: 'head', x: 0.15, y: -0.3, z: -0.25 } }] });
+run(['xr', 'run-sequence'], {
+  device: 'hand-right',
+  steps: [
+    { label: 'pinch fader', target: { name: 'Fader A' }, approach: { distance: 0.06 }, pinch: { value: 1, at: 'arrival' } },
+    // the emulated pinch holds the cap a little off-centre, so aim for the far end
+    { label: 'drag down', position: toWorld([fx, fy, from]) },
+  ],
+}, 45000);
+sleep(0.4);
+const held = run(['ecs', 'query'], { entityIndex: fader, components: ['Grabbed', 'Fader'] }).components;
+const fv = held.find((c) => c.componentId === 'Fader')?.values.value;
+check('pinching the channel fader grabs it', held.some((c) => c.componentId === 'Grabbed'));
+check('dragging it down turns the channel down', fv < 0.6, `value ${fv?.toFixed(2)}`);
+run(['xr', 'run-sequence'], { device: 'hand-right', steps: [{ pinch: 0, duration: 0.15 }, { anchor: 'wrist', position: { relativeTo: 'head', x: 0.15, y: -0.3, z: -0.25 } }] });
+const pos2 = values(fader, 'Transform').position;
+check('released cap stays on its slot line (x, y locked)', Math.abs(pos2[0] - fx) < 0.001 && Math.abs(pos2[1] - fy) < 0.001, pos2.map((v) => v.toFixed(3)).join(', '));
+
+// 8. turn a knob: press HI with a fingertip and slide 1.5 cm to the right in a
+// straight line (run-sequence moves in arcs, which would lift the finger)
+const hi = find('^Hi A$');
+// deck A's knobs with the left hand, which reaches them without crossing DROP
+run(['xr', 'run-sequence'], {
+  device: 'hand-left',
+  steps: [{ label: 'press HI', target: { name: 'Hi A', face: 'top' }, approach: { distance: 0.05 }, anchor: 'index-tip', poseId: 'point', offset: { normal: -0.004 } }],
+}, 45000);
+const tip = run(['xr', 'get-hand-state'], { device: 'hand-left' }).pin.target;
+run(['xr', 'animate-to'], { device: 'hand-left', anchor: 'index-tip', position: { x: tip.x + 0.015, y: tip.y, z: tip.z }, duration: 0.6 });
+run(['xr', 'animate-to'], { device: 'hand-left', anchor: 'index-tip', position: { x: tip.x + 0.015, y: tip.y + 0.08, z: tip.z }, duration: 0.3 });
+sleep(0.4);
+const turned = values(hi, 'Knob');
+check('pressing HI and sliding right turns it up (no kill)', turned.value > 0.2 && turned.killed === false, `value ${turned.value.toFixed(2)}`);
 
 console.log(`${results.filter(Boolean).length}/${results.length} passed`);
