@@ -19,8 +19,7 @@
         },
         "meshDetection": {
           "required": false
-        },
-        "gazeTracking": true
+        }
       }
     },
     "input": {

@@ -39,9 +39,12 @@ const later = run(['browser', 'run', 'scripts/probes/position.mjs']);
 const p0 = JSON.parse(left.data?.result ?? left.result);
 const p1 = JSON.parse(later.data?.result ?? later.result);
 check('leaving XR freezes the music', p0.ctx === 'suspended' && Math.abs(p1.pos - p0.pos) < 0.05, `${p0.ctx}, ${p0.pos.toFixed(2)} → ${p1.pos.toFixed(2)} s over 3 s`);
+const entered = Date.now();
 run(['xr', 'enter']);
 sleep(2);
 const back = run(['browser', 'run', 'scripts/probes/position.mjs']);
 const p2 = JSON.parse(back.data?.result ?? back.result);
-check('coming back resumes from the same spot', p2.ctx === 'running' && p2.pos > p1.pos && p2.pos - p1.pos < 6, `${p1.pos.toFixed(2)} → ${p2.pos.toFixed(2)} s`);
+// it may only have moved on by the real time since re-entering (CLI calls are slow)
+const elapsed = (Date.now() - entered) / 1000;
+check('coming back resumes from the same spot', p2.ctx === 'running' && p2.pos > p1.pos && p2.pos - p1.pos <= elapsed + 0.3, `${p1.pos.toFixed(2)} → ${p2.pos.toFixed(2)} s in ${elapsed.toFixed(1)} s`);
 console.log(`${results.filter(Boolean).length}/${results.length} passed`);

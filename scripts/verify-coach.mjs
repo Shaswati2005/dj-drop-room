@@ -18,9 +18,11 @@ const check = (label, ok, detail = '') => {
   results.push(ok);
   console.log(`${ok ? 'PASS' : 'FAIL'} ${label} ${detail}`);
 };
-const REST = { 'hand-left': { x: -0.15, y: -0.3, z: -0.25 }, 'hand-right': { x: 0.15, y: -0.3, z: -0.25 } };
+// hands parked out to the sides and back, well clear of the pads (resting
+// over the console let a fingertip graze the Chords pads)
+const REST = { 'hand-left': { x: -0.35, y: -0.25, z: -0.05 }, 'hand-right': { x: 0.35, y: -0.25, z: -0.05 } };
 const press = (name, hand = 'hand-right') =>
-  run(['xr', 'run-sequence'], { device: hand, steps: [{ target: { name, face: 'top' }, approach: { distance: 0.05 }, press: { hold: 0.15 } }, { anchor: 'wrist', position: { relativeTo: 'head', ...REST[hand] } }] }, 45000);
+  run(['xr', 'run-sequence'], { device: hand, steps: [{ target: { name, face: 'top' }, approach: { distance: 0.05 }, press: { hold: 0.15 } }, { anchor: 'wrist', position: { relativeTo: 'head', ...REST[hand] }, depart: { distance: 0.06 } }] }, 45000);
 const until = (fn, seconds) => { const end = Date.now() + seconds * 1000; do { if (fn()) return true; } while (Date.now() < end); return false; };
 
 try { run(['xr', 'exit']); } catch {}

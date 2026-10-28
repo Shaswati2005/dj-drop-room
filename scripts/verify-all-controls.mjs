@@ -45,14 +45,18 @@ const values = (name, component) => run(['ecs', 'query'], { entityIndex: ids[nam
 const music = () => values('Music State', 'MusicState');
 const lit = (name) => values(name, 'PushButton').lit;
 const handFor = (name) => (/\bA\b/.test(name) && name !== 'Xf End B' ? 'hand-left' : 'hand-right');
-const REST = { 'hand-left': { x: -0.15, y: -0.3, z: -0.25 }, 'hand-right': { x: 0.15, y: -0.3, z: -0.25 } };
+// hands parked out to the sides and back, well clear of the pads (resting
+// over the console let a fingertip graze the Chords pads)
+const REST = { 'hand-left': { x: -0.35, y: -0.25, z: -0.05 }, 'hand-right': { x: 0.35, y: -0.25, z: -0.05 } };
 const rest = (hand) => run(['xr', 'run-sequence'], { device: hand, steps: [{ pinch: 0, duration: 0.1 }, { anchor: 'wrist', position: { relativeTo: 'head', ...REST[hand] } }] });
 const press = (name) =>
   run(['xr', 'run-sequence'], {
     device: handFor(name),
     steps: [
       { label: name, target: { name, face: 'top' }, approach: { distance: 0.05 }, press: { hold: 0.15 } },
-      { label: 'rest', anchor: 'wrist', position: { relativeTo: 'head', ...REST[handFor(name)] } },
+      // lift straight off the control first, as a real tap does, so the way back
+      // to rest cannot graze a neighbouring pad
+      { label: 'rest', anchor: 'wrist', position: { relativeTo: 'head', ...REST[handFor(name)] }, depart: { distance: 0.06 } },
     ],
   }, 45000);
 /** Poll `fn` (CLI round trips ~1 s) until it returns true or `seconds` pass. */
@@ -108,7 +112,7 @@ for (const deck of ['A', 'B']) {
     const off = until(() => stems()[i] === 0, 5);
     press(pad);
     const on = until(() => stems()[i] === 1, 5);
-    check(`${pad} mutes then brings back its stem`, off && on);
+    check(`${pad} mutes then brings back its stem`, off && on, `off=${off} on=${on} stems=${stems().join("")}`);
   }
   for (let i = 0; i < 4; i++) {
     const pad = `Pad ${deck} ${i + 5}`;
