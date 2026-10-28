@@ -16,6 +16,9 @@ const TABLE_REACH = [0.25, 0.8];
 /** Where the console sits: on a detected table, or floating in front. */
 export type Placement = 'table' | 'head';
 
+/** The surface the console stands on, for things that share it (the crowd). */
+export const consoleSurface = { placement: 'head' as Placement, y: 0 };
+
 /**
  * Puts the console in front of the seated player when XR starts (PLAN §5.1):
  * first `forward` ahead of the head and `below` under it, facing them; then,
@@ -74,6 +77,8 @@ export class ConsolePlacementSystem extends createSystem({
     const object = entity.object3D;
     if (object == null) return;
     object.position.copy(this.point);
+    consoleSurface.placement = this.placement;
+    consoleSurface.y = this.point.y - (this.placement === 'table' ? ON_SURFACE_LIFT : 0);
     object.rotation.set(TILT, Math.atan2(-this.forward.x, -this.forward.z), 0, 'YXZ');
   }
 

@@ -1,8 +1,8 @@
-import { BackSide, Color, CustomBlending, OneFactor, OneMinusSrcAlphaFactor, SrcAlphaFactor, createSystem, Mesh, MeshBasicMaterial, MeshStandardMaterial, SphereGeometry, Vector3 } from '@iwsdk/core';
+import { BackSide, Color, InstancedMesh, CustomBlending, OneFactor, OneMinusSrcAlphaFactor, SrcAlphaFactor, createSystem, Mesh, MeshBasicMaterial, MeshStandardMaterial, SphereGeometry, Vector3 } from '@iwsdk/core';
 import type { Entity, Object3D } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
 import { ConsoleRoot, LightRig } from '../console-components.js';
-import { PIXEL_BARS, PIXELS, RIG_HEADS } from '../scene-assets/light-rig.scene-asset.js';
+import { PIXEL_BARS, PIXEL_OFF, PIXELS, pixelIndex, RIG_HEADS } from '../scene-assets/light-rig.scene-asset.js';
 
 /** Seconds for the rig to fade in once the first riser starts. */
 const REVEAL = 1.2;
@@ -30,8 +30,8 @@ export class LightShowSystem extends createSystem({
   private dome!: Mesh;
   private domeMaterial!: MeshBasicMaterial;
   private fixtures!: Fixture[];
-  private bars!: { pixels: Mesh[]; lit: MeshStandardMaterial }[];
-  private pixelOff: MeshStandardMaterial | null = null;
+  private pixels: InstancedMesh | null = null;
+  private pixelOff!: Color;
   private rigObject: Object3D | null = null;
   private rigEntity: Entity | null = null;
   private consoleEntity: Entity | null = null;
@@ -43,7 +43,7 @@ export class LightShowSystem extends createSystem({
 
   init(): void {
     this.fixtures = [];
-    this.bars = [];
+    this.pixelOff = new Color(PIXEL_OFF);
     this.color = new Color();
     this.at = new Vector3();
     this.forward = new Vector3();
@@ -90,13 +90,7 @@ export class LightShowSystem extends createSystem({
       beam.material = material;
       this.fixtures.push({ pan: rig.getObjectByName(`Pan${i}`)!, tilt: rig.getObjectByName(`Tilt${i}`)!, beam: material });
     }
-    for (let j = 0; j < PIXEL_BARS; j++) {
-      const pixels: Mesh[] = [];
-      for (let k = 0; k < PIXELS; k++) pixels.push(rig.getObjectByName(`Pixel${j}_${k}`) as Mesh);
-      this.pixelOff ??= pixels[0].material as MeshStandardMaterial;
-      const lit = new MeshStandardMaterial({ color: '#111111', emissive: '#FFFFFF', emissiveIntensity: 2, roughness: 0.4 });
-      this.bars.push({ pixels, lit });
-    }
+    this.pixels = rig.getObjectByName('Pixels') as InstancedMesh;
     this.rigObject = rig;
     rig.visible = false;
     return true;
@@ -165,13 +159,13 @@ export class LightShowSystem extends createSystem({
 
     const lit = Math.min(PIXELS, Math.round(Math.sqrt(view.level) * PIXELS * 1.3 * reveal + flash * PIXELS));
     const chase = Math.floor(beats) % PIXEL_BARS;
-    for (let j = 0; j < this.bars.length; j++) {
-      const bar = this.bars[j];
-      this.color.setHSL((hue + j / PIXEL_BARS) % 1, 0.9, 0.55);
-      bar.lit.emissive.copy(this.color);
-      bar.lit.emissiveIntensity = (j === chase ? 3 : 1.4) * reveal;
-      for (let k = 0; k < PIXELS; k++) bar.pixels[k].material = PIXELS - 1 - k < lit ? bar.lit : this.pixelOff!;
+    const pixels = this.pixels!;
+    for (let j = 0; j < PIXEL_BARS; j++) {
+      // the beat's bar burns brighter; colours past 1 bloom like LEDs
+      this.color.setHSL((hue + j / PIXEL_BARS) % 1, 0.9, 0.55).multiplyScalar((j === chase ? 1.6 : 1) * reveal);
+      for (let k = 0; k < PIXELS; k++) pixels.setColorAt(pixelIndex(j, k), PIXELS - 1 - k < lit ? this.color : this.pixelOff);
     }
+    pixels.instanceColor!.needsUpdate = true;
   }
 
   /** Hang the ring above the console, a little beyond it, level with the floor. */

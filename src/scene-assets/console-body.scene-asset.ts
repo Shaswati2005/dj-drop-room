@@ -1,4 +1,4 @@
-import { BoxGeometry, CylinderGeometry, Group, Mesh, PlaneGeometry, TorusGeometry } from '@iwsdk/core';
+import { BoxGeometry, Color, CylinderGeometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, Object3D as Spot, PlaneGeometry, TorusGeometry } from '@iwsdk/core';
 import type { Material, Object3D } from '@iwsdk/core';
 import { BODY, DECK, deckX, MIXER, MIXER_HALF, STRIP_X } from './console-layout.js';
 import { DECK_COLORS, glow, materials } from './console-materials.js';
@@ -6,9 +6,9 @@ import { bevelBox } from './lib/hardsurface.js';
 
 /**
  * The console body (static): chassis, deck and mixer faceplates, jog wells,
- * display screens, fader slots with scale ticks, and LED meter segments named
- * Meter{A,B}_{0..11} and Master{L,R}_{0..11} (0 = bottom) for the meter
- * system to light. Interactive controls are separate assets placed on top.
+ * display screens, fader slots with scale ticks, and LED meter columns
+ * Meter{A,B}Leds and Master{L,R}Leds, instanced meshes whose instance i
+ * (0 = bottom) the meter system colours. Interactive controls are separate assets placed on top.
  */
 const T = BODY.top;
 
@@ -25,25 +25,39 @@ function slot(name: string, x: number, z: number, along: 'x' | 'z', length: numb
   const w = along === 'x' ? length : 0.005;
   const d = along === 'x' ? 0.005 : length;
   g.add(mesh(`${name}-slot`, new BoxGeometry(w, 0.0012, d), materials.slot, x, T + 0.0021, z));
-  // five scale ticks beside the slot
+  // five scale ticks beside the slot, one instanced draw
+  const ticks = new InstancedMesh(along === 'x' ? new BoxGeometry(0.0008, 0.0006, 0.004) : new BoxGeometry(0.004, 0.0006, 0.0008), materials.tick, 5);
+  ticks.name = `${name}-ticks`;
+  const spot = new Spot();
   for (let i = 0; i < 5; i++) {
     const f = -0.5 + i / 4;
-    const tick = along === 'x'
-      ? mesh(`${name}-tick`, new BoxGeometry(0.0008, 0.0006, 0.004), materials.tick, x + f * length * 0.9, T + 0.0018, z - 0.011)
-      : mesh(`${name}-tick`, new BoxGeometry(0.004, 0.0006, 0.0008), materials.tick, x - 0.011, T + 0.0018, z + f * length * 0.9);
-    g.add(tick);
+    if (along === 'x') spot.position.set(x + f * length * 0.9, T + 0.0018, z - 0.011);
+    else spot.position.set(x - 0.011, T + 0.0018, z + f * length * 0.9);
+    spot.updateMatrix();
+    ticks.setMatrixAt(i, spot.matrix);
   }
+  g.add(ticks);
   return g;
 }
+
+/** Unlit LED colour; the meter system colours lit segments per instance. */
+export const LED_OFF = '#16181A';
+const ledMaterial = new MeshBasicMaterial({ color: '#FFFFFF', toneMapped: false });
 
 function meter(prefix: string, x: number, z0: number, z1: number, count: number): Object3D {
   const g = new Group();
   g.name = `${prefix}Meter`;
-  const led = new BoxGeometry(0.006, 0.0014, (Math.abs(z1 - z0) / count) * 0.7);
+  const leds = new InstancedMesh(new BoxGeometry(0.006, 0.0014, (Math.abs(z1 - z0) / count) * 0.7), ledMaterial, count);
+  leds.name = `${prefix}Leds`;
+  const spot = new Spot();
+  const off = new Color(LED_OFF);
   for (let i = 0; i < count; i++) {
-    const z = z0 + ((z1 - z0) * (i + 0.5)) / count;
-    g.add(mesh(`${prefix}_${i}`, led, materials.ledOff, x, T + 0.0022, z));
+    spot.position.set(x, T + 0.0022, z0 + ((z1 - z0) * (i + 0.5)) / count);
+    spot.updateMatrix();
+    leds.setMatrixAt(i, spot.matrix);
+    leds.setColorAt(i, off);
   }
+  g.add(leds);
   return g;
 }
 

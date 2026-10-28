@@ -7,6 +7,8 @@ import {
   ConeGeometry,
   CylinderGeometry,
   Group,
+  InstancedMesh,
+  Color,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -28,7 +30,9 @@ export const BEAM_LENGTH = 1.5;
 const aluminium = new MeshStandardMaterial({ color: '#B9BEC6', metalness: 0.85, roughness: 0.32 });
 const fixtureBody = new MeshStandardMaterial({ color: '#16181C', metalness: 0.3, roughness: 0.55 });
 const lensOff = new MeshStandardMaterial({ color: '#202530', emissive: '#FFFFFF', emissiveIntensity: 0.4, roughness: 0.2 });
-const pixelOff = new MeshStandardMaterial({ color: '#0C0E12', emissive: '#000000', roughness: 0.5 });
+/** Unlit LED colour; lit pixels are set per instance by the light show. */
+export const PIXEL_OFF = '#101318';
+const pixelMaterial = new MeshBasicMaterial({ color: '#FFFFFF', toneMapped: false });
 const barCase = new MeshStandardMaterial({ color: '#0A0B0D', metalness: 0.2, roughness: 0.6 });
 
 /** Additive light cone, bright at the lens and fading to nothing at the far
@@ -84,6 +88,9 @@ function truss(): Group {
   // diagonal lacing between the chords
   const lace = new CylinderGeometry(0.0025, 0.0025, 1, 6);
   const steps = 72;
+  // one instanced mesh for all the lacing: a single draw call
+  const lacing = new InstancedMesh(lace, aluminium, steps);
+  lacing.name = 'Lacing';
   for (let i = 0; i < steps; i++) {
     const a = (i / steps) * Math.PI * 2;
     const b = ((i + 0.5) / steps) * Math.PI * 2;
@@ -91,7 +98,7 @@ function truss(): Group {
     const [r1, y1] = chords[2];
     const p0 = [Math.cos(a) * r0, y0, Math.sin(a) * r0];
     const p1 = [Math.cos(b) * r1, y1, Math.sin(b) * r1];
-    const strut = new Mesh(lace, aluminium);
+    const strut = new Object3D();
     strut.position.set((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2);
     const dx = p1[0] - p0[0];
     const dy = p1[1] - p0[1];
@@ -100,9 +107,10 @@ function truss(): Group {
     strut.scale.y = length;
     strut.lookAt(strut.position.x + dx, strut.position.y + dy, strut.position.z + dz);
     strut.rotateX(Math.PI / 2);
-    strut.name = 'Lacing';
-    group.add(strut);
+    strut.updateMatrix();
+    lacing.setMatrixAt(i, strut.matrix);
   }
+  group.add(lacing);
   return group;
 }
 
@@ -147,25 +155,41 @@ function movingHead(i: number, beam: ConeGeometry): Group {
   return mount;
 }
 
-/** A vertical LED pixel bar hung from the truss's lower chord. */
-function pixelBar(j: number): Group {
-  const bar = new Group();
-  bar.name = `PixelBar${j}`;
+/** Index of pixel k (0 = top) of bar j in the Pixels instanced mesh. */
+export const pixelIndex = (j: number, k: number): number => j * PIXELS + k;
+
+/** The 8 vertical LED pixel bars hung from the lower chord, as three
+ * instanced meshes (housings, hangers, and Pixels, coloured per instance by
+ * the light show). */
+function pixelBars(): Object3D[] {
   const height = 0.2;
-  const housing = new Mesh(new BoxGeometry(0.014, height + 0.01, 0.01), barCase);
-  housing.position.y = -CHORD / 2 - height / 2 - 0.01;
-  bar.add(housing);
-  const cell = new BoxGeometry(0.01, height / PIXELS - 0.003, 0.004);
-  for (let k = 0; k < PIXELS; k++) {
-    const pixel = new Mesh(cell, pixelOff);
-    pixel.position.set(0, -CHORD / 2 - 0.015 - (k + 0.5) * (height / PIXELS), 0.006);
-    pixel.name = `Pixel${j}_${k}`;
-    bar.add(pixel);
+  const housings = new InstancedMesh(new BoxGeometry(0.014, height + 0.01, 0.01), barCase, PIXEL_BARS);
+  housings.name = 'PixelBarHousings';
+  const hangers = new InstancedMesh(new SphereGeometry(0.004, 8, 6), aluminium, PIXEL_BARS);
+  hangers.name = 'PixelBarHangers';
+  const pixels = new InstancedMesh(new BoxGeometry(0.01, height / PIXELS - 0.003, 0.004), pixelMaterial, PIXEL_BARS * PIXELS);
+  pixels.name = 'Pixels';
+  const bar = new Object3D();
+  const part = new Object3D();
+  bar.add(part);
+  const off = new Color(PIXEL_OFF);
+  for (let j = 0; j < PIXEL_BARS; j++) {
+    const a = ((j + 0.5) / PIXEL_BARS) * Math.PI * 2;
+    bar.position.set(Math.cos(a) * RADIUS, 0, Math.sin(a) * RADIUS);
+    bar.rotation.y = -a - Math.PI / 2;
+    const place = (mesh: InstancedMesh, index: number, y: number, z = 0) => {
+      part.position.set(0, y, z);
+      bar.updateMatrixWorld(true);
+      mesh.setMatrixAt(index, part.matrixWorld);
+    };
+    place(housings, j, -CHORD / 2 - height / 2 - 0.01);
+    place(hangers, j, -CHORD / 2 - 0.006);
+    for (let k = 0; k < PIXELS; k++) {
+      place(pixels, pixelIndex(j, k), -CHORD / 2 - 0.015 - (k + 0.5) * (height / PIXELS), 0.006);
+      pixels.setColorAt(pixelIndex(j, k), off);
+    }
   }
-  const hanger = new Mesh(new SphereGeometry(0.004, 8, 6), aluminium);
-  hanger.position.y = -CHORD / 2 - 0.006;
-  bar.add(hanger);
-  return bar;
+  return [housings, hangers, pixels];
 }
 
 /**
@@ -173,7 +197,7 @@ function pixelBar(j: number): Group {
  * UPGRADE §3.4): a 1.1 m circular truss, 8 moving heads pointing down and out
  * across the table and room, and 8 LED pixel bars between them. Origin at the
  * ring's centre; the system lifts it above the console and animates Pan{i},
- * Tilt{i}, Beam{i} and Pixel{j}_{k}.
+ * Tilt{i}, Beam{i} and the Pixels instances (see pixelIndex).
  */
 export function createLightRig(): Object3D {
   const rig = new Group();
@@ -188,12 +212,6 @@ export function createLightRig(): Object3D {
     head.rotation.y = -a + Math.PI / 2;
     rig.add(head);
   }
-  for (let j = 0; j < PIXEL_BARS; j++) {
-    const a = ((j + 0.5) / PIXEL_BARS) * Math.PI * 2;
-    const bar = pixelBar(j);
-    bar.position.set(Math.cos(a) * RADIUS, 0, Math.sin(a) * RADIUS);
-    bar.rotation.y = -a - Math.PI / 2;
-    rig.add(bar);
-  }
+  rig.add(...pixelBars());
   return rig;
 }

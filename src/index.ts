@@ -9,6 +9,8 @@ import { DisplaySystem } from './systems/display-system.js';
 import { HintSystem } from './systems/hint-system.js';
 import { LightShowSystem } from './systems/light-show-system.js';
 import { SessionSystem } from './systems/session-system.js';
+import { CoachSystem } from './systems/coach-system.js';
+import { CrowdSystem } from './systems/crowd-system.js';
 import { JogWheelSystem } from './systems/jog-wheel-system.js';
 import { MeterSystem } from './systems/meter-system.js';
 import { MixerControlSystem } from './systems/mixer-control-system.js';
@@ -40,6 +42,8 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(HintSystem);
   world.registerSystem(LightShowSystem);
   world.registerSystem(SessionSystem);
+  world.registerSystem(CoachSystem);
+  world.registerSystem(CrowdSystem);
   world.renderer.xr.addEventListener('sessionstart', () => {
     world.renderer.xr.getSession()?.addEventListener('selectstart', unlockAudio);
   });
