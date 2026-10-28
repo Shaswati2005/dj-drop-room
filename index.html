@@ -7,10 +7,27 @@
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
     <link rel="icon" href="data:," />
-    <title>meta</title>
+    <title>Drop Room</title>
+    <style>
+      #start-music {
+        position: fixed;
+        left: 50%;
+        bottom: 32px;
+        transform: translateX(-50%);
+        padding: 18px 36px;
+        border: none;
+        border-radius: 999px;
+        background: #ffc93d;
+        color: #16121f;
+        font: 700 22px system-ui, sans-serif;
+        cursor: pointer;
+        z-index: 10;
+      }
+    </style>
   </head>
   <body style="margin: 0">
     <div id="scene-container"></div>
+    <button id="start-music" type="button">Start the music</button>
     <script type="module" src="/src/index.ts"></script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@iwsdk/core/dist/schemas/iwsdk-project.v1.schema.json",
   "version": "iwsdk.project.v1",
-  "scene": "./public/scenes/main.iwsdk.scene.json",
+  "scene": "./public/scenes/droproom.iwsdk.scene.json",
   "assets": {
     "module": "./src/assets"
   },
@@ -26,13 +26,13 @@
       "camera": {
         "position": [
           0,
-          1.25,
-          0.2
+          1.17,
+          0.05
         ],
         "lookAt": [
           0,
-          0.75,
-          -0.5
+          0.76,
+          -0.42
         ]
       }
     },
@@ -50,7 +50,8 @@
   },
   "dev": {
     "emulator": {
-      "device": "metaQuest3"
+      "device": "metaQuest3",
+      "environment": "sunlit_living_room"
     }
   }
 }

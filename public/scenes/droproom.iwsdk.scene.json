@@ -1,0 +1,453 @@
+{
+  "version": "iwsdk.scene.v1",
+  "units": "meters",
+  "components": {
+    "com.iwsdk.components.IBLGradient": {
+      "sky": [
+        0.75,
+        0.78,
+        0.85,
+        1
+      ],
+      "equator": [
+        0.45,
+        0.45,
+        0.5,
+        1
+      ],
+      "ground": [
+        0.2,
+        0.18,
+        0.18,
+        1
+      ],
+      "intensity": 0.6
+    }
+  },
+  "environment": {
+    "toneMapping": "aces",
+    "exposure": 1,
+    "shadows": false
+  },
+  "resources": {},
+  "authoring": {
+    "views": [
+      {
+        "id": "hero",
+        "role": "hero",
+        "projection": "perspective",
+        "position": [
+          0,
+          1.17,
+          0.05
+        ],
+        "target": [
+          0,
+          0.76,
+          -0.42
+        ],
+        "fov": 55
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "music-state",
+      "name": "Music State",
+      "content": {
+        "type": "group"
+      },
+      "components": {
+        "MusicState": {}
+      }
+    },
+    {
+      "id": "console",
+      "name": "Console",
+      "content": {
+        "type": "asset",
+        "asset": "console-frame"
+      },
+      "transform": {
+        "position": [
+          0,
+          0.74,
+          -0.42
+        ],
+        "rotationDeg": [
+          15,
+          0,
+          0
+        ]
+      },
+      "components": {
+        "ConsoleRoot": {
+          "forward": 0.44,
+          "below": 0.45
+        }
+      },
+      "children": [
+        {
+          "id": "deck-a",
+          "name": "Deck A",
+          "content": {
+            "type": "group"
+          },
+          "transform": {
+            "position": [
+              -0.219,
+              0.03,
+              0.0265
+            ],
+            "rotationDeg": [
+              0,
+              15,
+              0
+            ]
+          },
+          "children": [
+            {
+              "id": "pad-a-drums",
+              "name": "Pad A Drums",
+              "content": {
+                "type": "asset",
+                "asset": "pad-drums"
+              },
+              "transform": {
+                "position": [
+                  -0.03,
+                  0.018,
+                  -0.07
+                ]
+              },
+              "components": {
+                "StemPad": {
+                  "deck": "A",
+                  "stem": "drums",
+                  "active": true,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            },
+            {
+              "id": "pad-a-bass",
+              "name": "Pad A Bass",
+              "content": {
+                "type": "asset",
+                "asset": "pad-bass"
+              },
+              "transform": {
+                "position": [
+                  0.03,
+                  0.018,
+                  -0.07
+                ]
+              },
+              "components": {
+                "StemPad": {
+                  "deck": "A",
+                  "stem": "bass",
+                  "active": true,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            },
+            {
+              "id": "pad-a-chords",
+              "name": "Pad A Chords",
+              "content": {
+                "type": "asset",
+                "asset": "pad-chords"
+              },
+              "transform": {
+                "position": [
+                  -0.03,
+                  0.018,
+                  -0.01
+                ]
+              },
+              "components": {
+                "StemPad": {
+                  "deck": "A",
+                  "stem": "chords",
+                  "active": true,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            },
+            {
+              "id": "pad-a-melody",
+              "name": "Pad A Melody",
+              "content": {
+                "type": "asset",
+                "asset": "pad-melody"
+              },
+              "transform": {
+                "position": [
+                  0.03,
+                  0.018,
+                  -0.01
+                ]
+              },
+              "components": {
+                "StemPad": {
+                  "deck": "A",
+                  "stem": "melody",
+                  "active": true,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            },
+            {
+              "id": "play-a",
+              "name": "Play A",
+              "content": {
+                "type": "asset",
+                "asset": "play-button"
+              },
+              "transform": {
+                "position": [
+                  0.06,
+                  0.018,
+                  0.09
+                ]
+              },
+              "components": {
+                "PushButton": {
+                  "action": "play",
+                  "deck": "A",
+                  "lit": false,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            }
+          ]
+        },
+        {
+          "id": "deck-b",
+          "name": "Deck B",
+          "content": {
+            "type": "group"
+          },
+          "transform": {
+            "position": [
+              0.219,
+              0.03,
+              0.0265
+            ],
+            "rotationDeg": [
+              0,
+              -15,
+              0
+            ]
+          },
+          "children": [
+            {
+              "id": "pad-b-drums",
+              "name": "Pad B Drums",
+              "content": {
+                "type": "asset",
+                "asset": "pad-drums"
+              },
+              "transform": {
+                "position": [
+                  -0.03,
+                  0.018,
+                  -0.07
+                ]
+              },
+              "components": {
+                "StemPad": {
+                  "deck": "B",
+                  "stem": "drums",
+                  "active": true,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            },
+            {
+              "id": "pad-b-bass",
+              "name": "Pad B Bass",
+              "content": {
+                "type": "asset",
+                "asset": "pad-bass"
+              },
+              "transform": {
+                "position": [
+                  0.03,
+                  0.018,
+                  -0.07
+                ]
+              },
+              "components": {
+                "StemPad": {
+                  "deck": "B",
+                  "stem": "bass",
+                  "active": true,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            },
+            {
+              "id": "pad-b-chords",
+              "name": "Pad B Chords",
+              "content": {
+                "type": "asset",
+                "asset": "pad-chords"
+              },
+              "transform": {
+                "position": [
+                  -0.03,
+                  0.018,
+                  -0.01
+                ]
+              },
+              "components": {
+                "StemPad": {
+                  "deck": "B",
+                  "stem": "chords",
+                  "active": true,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            },
+            {
+              "id": "pad-b-melody",
+              "name": "Pad B Melody",
+              "content": {
+                "type": "asset",
+                "asset": "pad-melody"
+              },
+              "transform": {
+                "position": [
+                  0.03,
+                  0.018,
+                  -0.01
+                ]
+              },
+              "components": {
+                "StemPad": {
+                  "deck": "B",
+                  "stem": "melody",
+                  "active": true,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            },
+            {
+              "id": "play-b",
+              "name": "Play B",
+              "content": {
+                "type": "asset",
+                "asset": "play-button"
+              },
+              "transform": {
+                "position": [
+                  -0.06,
+                  0.018,
+                  0.09
+                ]
+              },
+              "components": {
+                "PushButton": {
+                  "action": "play",
+                  "deck": "B",
+                  "lit": false,
+                  "armed": false
+                },
+                "PokeInteractable": {},
+                "RayInteractable": {}
+              }
+            }
+          ]
+        },
+        {
+          "id": "start-pad",
+          "name": "Start Pad",
+          "content": {
+            "type": "asset",
+            "asset": "start-pad"
+          },
+          "transform": {
+            "position": [
+              0,
+              0.05,
+              0.05
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "start",
+              "deck": "A",
+              "lit": true,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "key-light",
+      "name": "Key Light",
+      "transform": {
+        "position": [
+          -1,
+          2.5,
+          0.5
+        ],
+        "rotationDeg": [
+          -55,
+          -25,
+          0
+        ]
+      },
+      "components": {
+        "com.iwsdk.components.DirectionalLight": {
+          "color": [
+            1,
+            0.95,
+            0.88,
+            1
+          ],
+          "intensity": 2,
+          "castShadow": false
+        }
+      }
+    },
+    {
+      "id": "fill",
+      "name": "Fill",
+      "components": {
+        "com.iwsdk.components.AmbientLight": {
+          "color": [
+            0.6,
+            0.65,
+            0.8,
+            1
+          ],
+          "intensity": 0.5
+        }
+      }
+    }
+  ]
+}
