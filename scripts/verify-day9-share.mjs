@@ -113,5 +113,7 @@ export default async function run({ page, frame }) {
   check('replay: deck B started on the same bar (same phase against A)', Math.abs(after.barsApart - before.barsApart) < 0.05, `${before.barsApart.toFixed(3)} vs ${after.barsApart.toFixed(3)} bars`);
   check('replay: tempo matches', same('bpmB'), `${after.bpmB} BPM`);
   check('the replay did not log itself', after.moves === 0, `${after.moves} moves`);
+  // leave the page on a plain URL: later tests reload it and must not replay this set
+  await app.evaluate(() => history.replaceState(null, '', location.pathname));
   return out.join('\n');
 }

@@ -98,6 +98,8 @@ export default async function run({ page, frame }) {
     return !document.getElementById('save-recording').hidden && !document.getElementById('set-tools').hidden;
   });
   check('REC: "Save recording" button is on the page', saveVisible);
+  const saved = await app.evaluate(() => window.__dropRoom.saveRecording());
+  check('REC: Save shares the file or downloads it (works after XR ends)', saved === 'downloaded' || saved === 'shared', saved);
 
   // ---- move log and share link ---------------------------------------------
   const log = await app.evaluate(async () => {
