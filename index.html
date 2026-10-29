@@ -23,11 +23,41 @@
         cursor: pointer;
         z-index: 10;
       }
+      #set-tools {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        max-width: 60vw;
+        z-index: 10;
+        font: 14px system-ui, sans-serif;
+        color: #fff;
+      }
+      #set-tools button {
+        padding: 10px 16px;
+        border: 1px solid #5b5470;
+        border-radius: 999px;
+        background: #231d33;
+        color: #fff;
+        font: 600 14px system-ui, sans-serif;
+        cursor: pointer;
+      }
+      #set-tools button#save-recording { background: #ff2d55; border-color: #ff2d55; }
+      #set-link { width: 260px; }
     </style>
   </head>
   <body style="margin: 0">
     <div id="scene-container"></div>
     <button id="start-music" type="button">Start the music</button>
+    <div id="set-tools" hidden>
+      <button id="save-recording" type="button" hidden>Save recording</button>
+      <button id="copy-set-link" type="button">Copy set link</button>
+      <input id="set-link" type="text" readonly hidden aria-label="Set link" />
+      <span id="set-status" role="status"></span>
+    </div>
     <script type="module" src="/src/index.ts"></script>
   </body>
 </html>

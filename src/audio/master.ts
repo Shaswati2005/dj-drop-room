@@ -31,6 +31,11 @@ export class Master {
     }).connect(this.clickGain);
   }
 
+  /** The last node before the speakers (what the recorder listens to). */
+  get output(): Tone.ToneAudioNode {
+    return this.limiter;
+  }
+
   /** Output level, 0..1. */
   get level(): number {
     return this.meter.level;

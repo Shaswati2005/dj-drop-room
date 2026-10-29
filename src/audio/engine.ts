@@ -3,8 +3,12 @@ import { Deck, HOT_CUES, LOOP_BARS, TEMPO_RANGE } from './deck.js';
 import type { DeckId } from './deck.js';
 import { DropFx } from './drop.js';
 import { Master } from './master.js';
+import { MoveLog } from './move-log.js';
+import type { Move } from './move-log.js';
+import { Recorder } from './recorder.js';
 import { Channel, clamp, crossfadeGains, MasterFx } from './mixer.js';
 import type { Band } from './mixer.js';
+import { camelot, mixesWith } from './camelot.js';
 import { CONCRETE, TRACKS, WARM_START } from './tracks/catalog.js';
 import { STEMS } from './track-model.js';
 import type { Section, Stem } from './track-model.js';
@@ -76,9 +80,39 @@ export interface EngineState {
   dropping: boolean;
   /** audio time being heard, for visuals keyed to dropFrom/dropAt */
   heard: number;
+  /** REC: recording now, seconds in this take, finished takes so far */
+  recording: boolean;
+  recSeconds: number;
+  takes: number;
+  /** crate: a load was refused (deck playing) at this audio time, on this deck */
+  refusedAt: number;
+  refusedDeck: DeckId | '';
+  /** set replay: running, moves done and total */
+  replaying: boolean;
+  replayDone: number;
+  replayTotal: number;
   A: DeckView;
   B: DeckView;
 }
+
+/** The tracks in the crate, in shelf order (left to right). */
+export const CRATE: readonly string[] = ['warm-start', 'concrete', 'mirrorball', 'rainy-tape'];
+
+/** One crate slot as the shelf shows it. */
+export interface CrateSlot {
+  trackId: string;
+  name: string;
+  bpm: number;
+  /** Camelot code, e.g. "8A" */
+  key: string;
+  /** the track is on deck A / B right now */
+  onA: boolean;
+  onB: boolean;
+  /** key within one Camelot step of the reference deck's, and tempo within ±6 % */
+  match: boolean;
+}
+
+export type LoadResult = 'loading' | 'refused' | 'unknown';
 
 const deckView = (): DeckView => ({
   trackId: '',
@@ -121,6 +155,9 @@ export class Engine {
   readonly dropFx: DropFx;
   readonly decks: Record<DeckId, Deck>;
   readonly channels: Record<DeckId, Channel>;
+  readonly recorder: Recorder;
+  /** every performance action since the set started (share link) */
+  readonly log = new MoveLog();
   readonly padModes: Record<DeckId, PadMode> = { A: 'stems', B: 'stems' };
   readonly state: EngineState = {
     running: false,
@@ -140,6 +177,14 @@ export class Engine {
     drops: 0,
     dropping: false,
     heard: 0,
+    recording: false,
+    recSeconds: 0,
+    takes: 0,
+    refusedAt: -10,
+    refusedDeck: '',
+    replaying: false,
+    replayDone: 0,
+    replayTotal: 0,
     A: deckView(),
     B: deckView(),
   };
@@ -148,6 +193,11 @@ export class Engine {
   private crossfader = 0;
   private fade: { from: number; to: number; start: number; seconds: number } | null = null;
   private preloaded: Promise<void> | null = null;
+  private replay: { moves: Move[]; next: number; start: number } | null = null;
+  private pendingReplay: Move[] | null = null;
+  private replaying = false;
+  private refusedAt = -10;
+  private refusedDeck: DeckId | '' = '';
   private dropFrom = 0;
   private dropAt = 0;
   private dropsScheduled = 0;
@@ -156,6 +206,7 @@ export class Engine {
     const heard = this.audibleTime();
     this.decks.A.tick(now, LOOK_AHEAD, heard);
     this.decks.B.tick(now, LOOK_AHEAD, heard);
+    this.tickReplay(now);
     if (this.fade != null) {
       const t = Math.min(1, (now - this.fade.start) / this.fade.seconds);
       this.applyCrossfader(this.fade.from + (this.fade.to - this.fade.from) * t);
@@ -173,6 +224,7 @@ export class Engine {
       this.decks[id].output.connect(this.channels[id].input);
       this.channels[id].output.fan(this.master.input, this.fx.input);
     }
+    this.recorder = new Recorder(context, this.master.output);
     context.on('tick', this.tick);
   }
 
@@ -199,6 +251,46 @@ export class Engine {
     return this.decks[deck === 'A' ? 'B' : 'A'];
   }
 
+  /** Log a performance action (not while a recorded set is replaying). */
+  private note(op: string, ...args: (number | string)[]): void {
+    if (!this.replaying) this.log.record(this.context.currentTime, op, ...args);
+  }
+
+  /** Crate pick: load a track onto a deck. Refused (and nothing changes) when
+   * the deck is playing or about to, or already loading: a load would cut the
+   * music. The caller shows the refusal. */
+  requestLoad(deck: DeckId, trackId: string): LoadResult {
+    if (TRACKS[trackId] == null) return 'unknown';
+    const d = this.decks[deck];
+    const now = this.context.currentTime;
+    if (d.isRunning || d.playing.pending(this.audibleTime()) || d.status === 'loading') {
+      this.refusedAt = now;
+      this.refusedDeck = deck;
+      return 'refused';
+    }
+    this.note('L', deck === 'A' ? 0 : 1, trackId);
+    void d.load(TRACKS[trackId]);
+    return 'loading';
+  }
+
+  /** The crate as the shelf shows it. Tracks are compared with the deck that
+   * is playing (or deck A when none is). */
+  crate(): CrateSlot[] {
+    const ref = this.decks[this.decks.B.isRunning && !this.decks.A.isRunning ? 'B' : 'A'].track;
+    return CRATE.map((id) => {
+      const t = TRACKS[id];
+      return {
+        trackId: id,
+        name: t.name,
+        bpm: t.bpm,
+        key: camelot(t.key),
+        onA: this.decks.A.track?.id === id,
+        onB: this.decks.B.track?.id === id,
+        match: ref != null && ref.id !== id && mixesWith(t, ref),
+      };
+    });
+  }
+
   async loadTrack(deck: DeckId, trackId: string): Promise<void> {
     const track = TRACKS[trackId];
     if (track == null) throw new Error(`Unknown track ${trackId}`);
@@ -221,6 +313,58 @@ export class Engine {
     await Promise.all([this.context.resume(), this.preload()]);
     const now = this.context.currentTime;
     this.decks.A.play(now + 0.05, this.audibleTime());
+    this.log.begin(now);
+    if (this.pendingReplay != null) {
+      this.replay = { moves: this.pendingReplay, next: 0, start: now };
+      this.pendingReplay = null;
+    }
+  }
+
+  /** Queue a recorded set; it plays from the next start(), exactly as it was
+   * performed. Does nothing to a running session. */
+  queueReplay(moves: Move[]): void {
+    this.pendingReplay = moves;
+    this.state.replayTotal = moves.length;
+    this.state.replayDone = 0;
+  }
+
+  private tickReplay(now: number): void {
+    const r = this.replay;
+    if (r == null) return;
+    this.replaying = true;
+    try {
+      while (r.next < r.moves.length && now >= r.start + r.moves[r.next][0] / 100) this.apply(r.moves[r.next++]);
+    } finally {
+      this.replaying = false;
+    }
+    if (r.next >= r.moves.length) {
+      this.state.replayDone = r.moves.length;
+      this.replay = null;
+    }
+  }
+
+  /** Perform one logged move through the same calls a hand would make. */
+  private apply(move: Move): void {
+    const [, op, a, b, c] = move;
+    const deck = (a === 1 ? 'B' : 'A') as DeckId;
+    switch (op) {
+      case 'p': this.togglePlay(deck); break;
+      case 'c': this.cue(deck); break;
+      case 's': this.sync(deck); break;
+      case 't': this.setTempo(deck, (b as number) / 100); break;
+      case 'm': this.setPadMode(deck, PAD_MODES[b as number] ?? 'stems'); break;
+      case 'd': this.pad(deck, b as number, c === 1); break;
+      case 'k': this.setKnob(deck, KNOBS[b as number] ?? 'trim', (c as number) / 100); break;
+      case 'x': this.tapKnob(deck, KNOBS[b as number] ?? 'trim'); break;
+      case 'f': this.setFader(deck, (b as number) / 100); break;
+      case 'X': this.setCrossfader((a as number) / 100); break;
+      case 'e': this.fadeTo(deck); break;
+      case 'E': this.toggleEcho(); break;
+      case 'S': this.toggleSpace(); break;
+      case 'D': this.drop(); break;
+      case 'T': this.toggleStem(deck, STEMS[b as number] ?? 'drums'); break;
+      case 'L': this.requestLoad(deck, String(b)); break;
+    }
   }
 
   // ---- transport ---------------------------------------------------------
@@ -228,6 +372,7 @@ export class Engine {
   /** PLAY/PAUSE. Pause is instant; play starts on the other deck's next bar
    * line when it is playing (quantised start), otherwise at once. */
   togglePlay(id: DeckId): void {
+    this.note('p', id === 'A' ? 0 : 1);
     const deck = this.decks[id];
     const now = this.context.currentTime;
     if (deck.isRunning) {
@@ -244,17 +389,20 @@ export class Engine {
   }
 
   cue(id: DeckId): void {
+    this.note('c', id === 'A' ? 0 : 1);
     this.decks[id].cue(this.context.currentTime + 0.005);
   }
 
   /** Match the other deck's tempo and bar position. */
   sync(id: DeckId): void {
+    this.note('s', id === 'A' ? 0 : 1);
     const other = this.other(id);
     if (other.track != null) this.decks[id].syncTo(other, this.context.currentTime);
   }
 
   /** Tempo fader, -1..1 → ±8 %. */
   setTempo(id: DeckId, fader: number): void {
+    this.note('t', id === 'A' ? 0 : 1, Math.round(clamp(fader, -1, 1) * 100));
     this.decks[id].setRate(1 + clamp(fader, -1, 1) * TEMPO_RANGE, this.context.currentTime);
   }
 
@@ -274,6 +422,7 @@ export class Engine {
   // ---- pads ----------------------------------------------------------------
 
   setPadMode(id: DeckId, mode: PadMode): void {
+    this.note('m', id === 'A' ? 0 : 1, PAD_MODES.indexOf(mode));
     this.decks[id].endRoll(this.context.currentTime);
     this.padModes[id] = mode;
   }
@@ -282,6 +431,7 @@ export class Engine {
    * STEMS: toggle / solo a stem. CUES: hot cue / delete it. LOOP: 1-8 bar
    * loops / beat rolls held under the finger. */
   pad(id: DeckId, slot: number, down: boolean): void {
+    this.note('d', id === 'A' ? 0 : 1, slot, down ? 1 : 0);
     const deck = this.decks[id];
     const now = this.context.currentTime;
     const top = slot < 4;
@@ -306,6 +456,7 @@ export class Engine {
   }
 
   toggleStem(deck: DeckId, stem: Stem): void {
+    this.note('T', deck === 'A' ? 0 : 1, STEMS.indexOf(stem));
     this.lastPressTime = this.context.currentTime;
     this.decks[deck].toggleStem(stem);
   }
@@ -314,6 +465,7 @@ export class Engine {
 
   /** A mixer knob turned to v (-1..1). */
   setKnob(id: DeckId, knob: KnobControl, v: number): void {
+    this.note('k', id === 'A' ? 0 : 1, KNOBS.indexOf(knob), Math.round(clamp(v, -1, 1) * 100));
     const channel = this.channels[id];
     if (knob === 'trim') channel.setTrim(v);
     else if (knob === 'filter') channel.setFilter(v);
@@ -328,6 +480,7 @@ export class Engine {
   /** A knob tapped: EQ bands kill/restore (isolator); TRIM and FILTER snap
    * back to the centre. */
   tapKnob(id: DeckId, knob: KnobControl): void {
+    this.note('x', id === 'A' ? 0 : 1, KNOBS.indexOf(knob));
     const channel = this.channels[id];
     if (knob === 'trim') channel.setTrim(0);
     else if (knob === 'filter') channel.setFilter(0);
@@ -335,11 +488,13 @@ export class Engine {
   }
 
   setFader(id: DeckId, v: number): void {
+    this.note('f', id === 'A' ? 0 : 1, Math.round(clamp(v, 0, 1) * 100));
     this.channels[id].setFader(v);
   }
 
   /** Crossfader moved by hand: cancels an A/B auto-fade. */
   setCrossfader(x: number): void {
+    this.note('X', Math.round(clamp(x, -1, 1) * 100));
     this.fade = null;
     this.applyCrossfader(x);
   }
@@ -354,6 +509,7 @@ export class Engine {
   /** A/B end button: glide the crossfader all the way over in 4 bars of the
    * master tempo; pressing the same end again stops the glide. */
   fadeTo(side: DeckId): void {
+    this.note('e', side === 'A' ? 0 : 1);
     const to = side === 'A' ? -1 : 1;
     if (this.fade?.to === to) {
       this.fade = null;
@@ -364,10 +520,12 @@ export class Engine {
   }
 
   toggleEcho(): void {
+    this.note('E');
     this.fx.toggleEcho(this.masterDeck().bpm || WARM_START.bpm);
   }
 
   toggleSpace(): void {
+    this.note('S');
     this.fx.toggleSpace();
   }
 
@@ -379,6 +537,7 @@ export class Engine {
     const deck = this.masterDeck();
     const now = this.context.currentTime;
     if (!deck.isRunning || deck.track == null || now < this.dropAt) return;
+    this.note('D');
     const beat = 60 / deck.bpm;
     let at = deck.nextBarTime(now);
     if (at - now < 2 * beat) at = deck.nextBarTime(at + 0.001);
@@ -421,6 +580,13 @@ export class Engine {
     s.echo = this.fx.echo;
     s.space = this.fx.space;
     s.heard = heard;
+    s.recording = this.recorder.recording;
+    s.recSeconds = this.recorder.seconds;
+    s.takes = this.recorder.takes;
+    s.refusedAt = this.refusedAt;
+    s.refusedDeck = this.refusedDeck;
+    s.replaying = this.replay != null || this.pendingReplay != null;
+    if (this.replay != null) s.replayDone = this.replay.next;
     s.dropFrom = this.dropFrom;
     s.dropAt = this.dropAt;
     s.dropping = heard < this.dropAt;
@@ -470,6 +636,7 @@ export class Engine {
       this.decks[id].dispose();
       this.channels[id].dispose();
     }
+    this.recorder.dispose();
     this.fx.dispose();
     this.dropFx.dispose();
     this.master.dispose();

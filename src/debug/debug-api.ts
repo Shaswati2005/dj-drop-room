@@ -4,6 +4,7 @@ import { liveEngine } from '../audio/live.js';
 import { renderOffline, renderStem, toPcm16Base64 } from '../audio/render/render.js';
 import type { DeckId } from '../audio/deck.js';
 import { STEMS } from '../audio/track-model.js';
+import { buildSetUrl, offerRecording, saveRecording, shareSet } from '../share.js';
 import type { Stem } from '../audio/track-model.js';
 
 /**
@@ -17,6 +18,9 @@ import type { Stem } from '../audio/track-model.js';
  * - timing(): when the last stem press happened and where in the bar it landed
  * - worldPosition(name, offset?): world point of a named object's origin, or of
  *   a point offset from it in its parent's space (where to drag a fader to)
+ * - crate(): the crate slots (name, BPM, Camelot key, which deck holds them, match)
+ * - setUrl(): the share link for the set so far; shareSet() also shows/copies it
+ * - saveRecording(): share or download the last REC take
  * - engine(): the live engine, for mixer and pad calls; world: the ECS world
  */
 export function installDebugApi(world: World): void {
@@ -45,6 +49,11 @@ export function installDebugApi(world: World): void {
       return { pressAt: e.lastPressTime, commitAt, barPhase, barSeconds: deck.barSeconds / deck.rate };
     },
     engine: liveEngine,
+    crate: () => liveEngine().crate(),
+    setUrl: buildSetUrl,
+    shareSet,
+    saveRecording,
+    offerRecording,
     world,
     worldPosition: (name: string, offset: [number, number, number] = [0, 0, 0]) => {
       const object = scene.getObjectByName(name);

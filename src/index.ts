@@ -15,6 +15,7 @@ import { JogWheelSystem } from './systems/jog-wheel-system.js';
 import { MeterSystem } from './systems/meter-system.js';
 import { MixerControlSystem } from './systems/mixer-control-system.js';
 import { PadFeedbackSystem } from './systems/pad-feedback-system.js';
+import { installSetTools, queueSharedSet, setPresentingProbe } from './share.js';
 
 // Any user gesture may resume audio: page clicks and keys, and XR selects
 // (a hand pinch), since a fingertip poke alone is not a browser gesture.
@@ -24,6 +25,11 @@ for (const type of ['pointerdown', 'keydown'] as const) document.addEventListene
 void liveEngine().preload();
 
 const startButton = document.getElementById('start-music') as HTMLButtonElement;
+installSetTools();
+// a shared set link: the Start press plays that set from its first move
+void queueSharedSet().then((moves) => {
+  if (moves > 0) startButton.textContent = 'Play the shared set';
+});
 startButton.addEventListener('click', () => {
   unlockAudio();
   void liveEngine().start();
@@ -47,5 +53,6 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.renderer.xr.addEventListener('sessionstart', () => {
     world.renderer.xr.getSession()?.addEventListener('selectstart', unlockAudio);
   });
+  setPresentingProbe(() => world.renderer.xr.isPresenting);
   installDebugApi(world);
 });
