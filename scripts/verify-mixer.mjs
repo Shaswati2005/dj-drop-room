@@ -39,11 +39,11 @@ export default async function run({ page, frame }) {
   check('channel fader down silences channel A', faded < base * 0.05, pct(base, faded));
   await e(() => window.__dropRoom.engine().setFader('A', 1));
 
-  // EQ: LOW kill, then the FILTER
-  const before = await level('A');
+  // EQ: LOW kill, then the FILTER (levels averaged over one whole 124 BPM bar, 1.94 s, so the beat phase cannot skew the comparison)
+  const before = await level('A', 1940);
   await e(() => window.__dropRoom.engine().tapKnob('A', 'low'));
   await wait(300);
-  const killed = await level('A');
+  const killed = await level('A', 1940);
   s = await state();
   check('LOW kill takes the kick and bass out (level drops > 30 %)', s.A.kills[2] && killed < before * 0.7, pct(before, killed));
   await e(() => window.__dropRoom.engine().tapKnob('A', 'low'));
