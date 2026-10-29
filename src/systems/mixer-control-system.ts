@@ -14,6 +14,10 @@ const SLIDE_RANGE = 0.025;
 const TAP_SLOP = 0.006;
 /** The finger has left once it is this far (m) above the knob's base. */
 const LIFTED = 0.035;
+/** Only finger movement within this height (m) of the press's lowest point
+ * turns the knob: drift as the finger lifts away must not turn a tap into a
+ * small turn. */
+const SLIDE_HEIGHT = 0.008;
 
 interface Turn {
   /** which hand presses the knob */
@@ -21,6 +25,8 @@ interface Turn {
   start: Vector3;
   startValue: number;
   moved: boolean;
+  /** lowest fingertip height above the knob's base so far in this press */
+  lowest: number;
   /** still touching the knob (Pressed); a turn outlives brief contact loss */
   touching: boolean;
 }
@@ -61,7 +67,7 @@ export class MixerControlSystem extends createSystem({
         }
         const hand = this.nearestHand(entity) ?? 'none';
         const start = hand === 'none' ? new Vector3() : this.finger.clone();
-        this.turns.set(entity.index, { hand, start, startValue: entity.getValue(Knob, 'value') ?? 0, moved: false, touching: true });
+        this.turns.set(entity.index, { hand, start, startValue: entity.getValue(Knob, 'value') ?? 0, moved: false, lowest: Infinity, touching: true });
       }),
       this.queries.pressedKnobs.subscribe('disqualify', (entity) => {
         const turn = this.turns.get(entity.index);
@@ -126,6 +132,8 @@ export class MixerControlSystem extends createSystem({
         this.endTurn(entity, turn);
         continue;
       }
+      turn.lowest = Math.min(turn.lowest, lift);
+      if (lift > turn.lowest + SLIDE_HEIGHT) continue;
       this.axis.setFromMatrixColumn(console, 0).normalize();
       const slide = this.knobAt.copy(this.finger).sub(turn.start).dot(this.axis);
       if (!turn.moved && Math.abs(slide) < TAP_SLOP) continue;

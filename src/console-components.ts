@@ -95,4 +95,5 @@ export const MusicState = createComponent('MusicState', {
   levelB: { type: Types.Float32, default: 0 },
   latencyMs: { type: Types.Float32, default: 0 },
   level: { type: Types.Float32, default: 0 },
+  drops: { type: Types.Int32, default: 0, help: 'DROPs landed so far' },
 });

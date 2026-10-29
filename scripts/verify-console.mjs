@@ -171,7 +171,10 @@ run(['xr', 'run-sequence'], { device: 'hand-right', steps: [{ pinch: 0, duration
 run(['xr', 'run-sequence'], {
   device: 'hand-right',
   steps: [
-    { label: 'pinch fader', target: { name: 'Fader A' }, approach: { distance: 0.06 }, pinch: { value: 1, at: 'arrival' } },
+    // settle on the cap before pinching: at full frame rate a pinch made
+    // while still arriving can miss it
+    { label: 'reach fader', anchor: 'grasp', target: { name: 'Fader A' }, approach: { distance: 0.06 } },
+    { label: 'pinch fader', pinch: 1, duration: 0.4 },
     // the emulated pinch holds the cap a little off-centre, so aim for the far end
     { label: 'drag down', position: toWorld([fx, fy, from]) },
   ],

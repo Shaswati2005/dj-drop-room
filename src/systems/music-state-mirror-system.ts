@@ -36,6 +36,7 @@ export class MusicStateMirrorSystem extends createSystem({
       entity.setValue(MusicState, 'playingB', s.B.playing);
       entity.setValue(MusicState, 'latencyMs', s.latencyMs);
       entity.setValue(MusicState, 'level', s.level);
+      entity.setValue(MusicState, 'drops', s.drops);
       entity.setValue(MusicState, 'bpmA', s.A.bpm);
       entity.setValue(MusicState, 'bpmB', s.B.bpm);
       entity.setValue(MusicState, 'positionA', s.A.position);

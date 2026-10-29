@@ -156,8 +156,10 @@ press('Xf End B');
 check('crossfader B-end glides to deck B', until(() => music().crossfader > 0.95, 10), `x = ${music().crossfader.toFixed(2)}`);
 press('Xf End A');
 check('crossfader A-end glides back to deck A', until(() => music().crossfader < -0.95, 10), `x = ${music().crossfader.toFixed(2)}`);
+// the button is lit for only ~3 s, too short to poll reliably: count landings
+const dropsBefore = music().drops;
 press('Drop');
-check('DROP charges (riser) and then lands', until(() => lit('Drop'), 3) && until(() => !values('Drop', 'PushButton').armed, 8));
+check('DROP charges (riser) and then lands', until(() => music().drops > dropsBefore, 8), `drops ${dropsBefore} → ${music().drops}`);
 
 // ── knobs: press and slide right 1.5 cm, then tap ──
 for (const deck of ['A', 'B']) {
@@ -196,7 +198,10 @@ const drag = (name, id, toEnd, hand) => {
   run(['xr', 'run-sequence'], {
     device: hand,
     steps: [
-      { label: `pinch ${name}`, target: { name }, approach: { distance: 0.06 }, pinch: { value: 1, at: 'arrival' } },
+      // settle on the cap before pinching: at full frame rate a pinch made
+      // while still arriving can miss it
+      { label: `reach ${name}`, anchor: 'grasp', target: { name }, approach: { distance: 0.06 } },
+      { label: `pinch ${name}`, pinch: 1, duration: 0.4 },
       { label: 'drag', position: toWorld(target) },
     ],
   }, 45000);
