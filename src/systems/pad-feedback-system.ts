@@ -86,7 +86,9 @@ export class PadFeedbackSystem extends createSystem({
       if (lit !== v.wasActive) v.flash = 1;
       v.wasActive = lit;
       v.material.emissive.copy(armed ? AMBER : v.color);
-      this.apply(entity, v, lit ? 1 : 0.08, armed, beatOn, ease, delta);
+      // REC pulses red while recording
+      const rec = lit && entity.getValue(PushButton, 'action') === ButtonActions.rec;
+      this.apply(entity, v, rec ? 0.55 + 0.45 * Math.sin(performance.now() / 180) : lit ? 1 : 0.08, armed, beatOn, ease, delta);
     }
   }
 

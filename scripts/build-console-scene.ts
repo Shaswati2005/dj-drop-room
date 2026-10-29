@@ -2,7 +2,8 @@
 // the controls always sit on the body's slots and wells.
 // Run: npx vite-node scripts/build-console-scene.ts
 import { readFileSync, writeFileSync } from 'node:fs';
-import { BODY, DECK, deckX, MIXER, PRESS_HEIGHT, STRIP_X } from '../src/scene-assets/console-layout.js';
+import { BODY, CRATE_LAYOUT, DECK, deckX, MIXER, PRESS_HEIGHT, STRIP_X } from '../src/scene-assets/console-layout.js';
+import { CRATE_ORDER } from '../src/audio/tracks/catalog.js';
 
 const SCENE = 'public/scenes/droproom.iwsdk.scene.json';
 const SURFACE = BODY.top + 0.0016; // on the faceplates
@@ -94,8 +95,22 @@ function mixer(): Node[] {
   return nodes;
 }
 
+/** Crate shelf: a load button per deck for each track, plus REC and SHARE. */
+function crate(): Node[] {
+  const nodes: Node[] = [];
+  const L = CRATE_LAYOUT;
+  const y = BODY.top + PRESS_HEIGHT.small;
+  CRATE_ORDER.forEach((track, i) => {
+    nodes.push(node(`load-${track}-a`, 'load-button-a', L.slotXs[i] - L.buttonDx, y, L.buttonZ, button('A', 'load', i)));
+    nodes.push(node(`load-${track}-b`, 'load-button-b', L.slotXs[i] + L.buttonDx, y, L.buttonZ, button('B', 'load', i)));
+  });
+  nodes.push(node('rec', 'rec-button', L.rec[0], y, L.rec[1], button('A', 'rec')));
+  nodes.push(node('share', 'share-button', L.share[0], y, L.share[1], button('A', 'share')));
+  return nodes;
+}
+
 const scene = JSON.parse(readFileSync(SCENE, 'utf8'));
 const consoleNode = scene.nodes.find((n: Node) => n.id === 'console');
-consoleNode.children = [...deck('A'), ...deck('B'), ...mixer()];
+consoleNode.children = [...deck('A'), ...deck('B'), ...mixer(), ...crate()];
 writeFileSync(SCENE, JSON.stringify(scene, null, 2) + '\n');
 console.log(`console: ${consoleNode.children.length} controls`);

@@ -9,7 +9,7 @@ import { Recorder } from './recorder.js';
 import { Channel, clamp, crossfadeGains, MasterFx } from './mixer.js';
 import type { Band } from './mixer.js';
 import { camelot, mixesWith } from './camelot.js';
-import { CONCRETE, TRACKS, WARM_START } from './tracks/catalog.js';
+import { CONCRETE, CRATE_ORDER, TRACKS, WARM_START } from './tracks/catalog.js';
 import { STEMS } from './track-model.js';
 import type { Section, Stem } from './track-model.js';
 
@@ -87,6 +87,11 @@ export interface EngineState {
   /** crate: a load was refused (deck playing) at this audio time, on this deck */
   refusedAt: number;
   refusedDeck: DeckId | '';
+  /** how many loads were refused, how many times SHARE was poked, moves logged so far, size of the last take */
+  refusals: number;
+  shares: number;
+  moves: number;
+  recBytes: number;
   /** set replay: running, moves done and total */
   replaying: boolean;
   replayDone: number;
@@ -94,9 +99,6 @@ export interface EngineState {
   A: DeckView;
   B: DeckView;
 }
-
-/** The tracks in the crate, in shelf order (left to right). */
-export const CRATE: readonly string[] = ['warm-start', 'concrete', 'mirrorball', 'rainy-tape'];
 
 /** One crate slot as the shelf shows it. */
 export interface CrateSlot {
@@ -182,6 +184,10 @@ export class Engine {
     takes: 0,
     refusedAt: -10,
     refusedDeck: '',
+    refusals: 0,
+    shares: 0,
+    moves: 0,
+    recBytes: 0,
     replaying: false,
     replayDone: 0,
     replayTotal: 0,
@@ -198,6 +204,9 @@ export class Engine {
   private replaying = false;
   private refusedAt = -10;
   private refusedDeck: DeckId | '' = '';
+  private refusals = 0;
+  /** SHARE pokes (the console button counts them) */
+  shares = 0;
   private dropFrom = 0;
   private dropAt = 0;
   private dropsScheduled = 0;
@@ -266,6 +275,7 @@ export class Engine {
     if (d.isRunning || d.playing.pending(this.audibleTime()) || d.status === 'loading') {
       this.refusedAt = now;
       this.refusedDeck = deck;
+      this.refusals++;
       return 'refused';
     }
     this.note('L', deck === 'A' ? 0 : 1, trackId);
@@ -277,7 +287,7 @@ export class Engine {
    * is playing (or deck A when none is). */
   crate(): CrateSlot[] {
     const ref = this.decks[this.decks.B.isRunning && !this.decks.A.isRunning ? 'B' : 'A'].track;
-    return CRATE.map((id) => {
+    return CRATE_ORDER.map((id) => {
       const t = TRACKS[id];
       return {
         trackId: id,
@@ -585,6 +595,10 @@ export class Engine {
     s.takes = this.recorder.takes;
     s.refusedAt = this.refusedAt;
     s.refusedDeck = this.refusedDeck;
+    s.refusals = this.refusals;
+    s.shares = this.shares;
+    s.moves = this.log.moves.length;
+    s.recBytes = this.recorder.blob?.size ?? 0;
     s.replaying = this.replay != null || this.pendingReplay != null;
     if (this.replay != null) s.replayDone = this.replay.next;
     s.dropFrom = this.dropFrom;

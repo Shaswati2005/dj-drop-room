@@ -1409,6 +1409,266 @@
             "PokeInteractable": {},
             "RayInteractable": {}
           }
+        },
+        {
+          "id": "load-warm-start-a",
+          "name": "Load Warm Start A",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-a"
+          },
+          "transform": {
+            "position": [
+              -0.273,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-warm-start-b",
+          "name": "Load Warm Start B",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-b"
+          },
+          "transform": {
+            "position": [
+              -0.217,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "B",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-concrete-a",
+          "name": "Load Concrete A",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-a"
+          },
+          "transform": {
+            "position": [
+              -0.148,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "A",
+              "index": 1,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-concrete-b",
+          "name": "Load Concrete B",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-b"
+          },
+          "transform": {
+            "position": [
+              -0.092,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "B",
+              "index": 1,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-mirrorball-a",
+          "name": "Load Mirrorball A",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-a"
+          },
+          "transform": {
+            "position": [
+              0.092,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "A",
+              "index": 2,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-mirrorball-b",
+          "name": "Load Mirrorball B",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-b"
+          },
+          "transform": {
+            "position": [
+              0.148,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "B",
+              "index": 2,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-rainy-tape-a",
+          "name": "Load Rainy Tape A",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-a"
+          },
+          "transform": {
+            "position": [
+              0.217,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "A",
+              "index": 3,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-rainy-tape-b",
+          "name": "Load Rainy Tape B",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-b"
+          },
+          "transform": {
+            "position": [
+              0.273,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "B",
+              "index": 3,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "rec",
+          "name": "Rec",
+          "content": {
+            "type": "asset",
+            "asset": "rec-button"
+          },
+          "transform": {
+            "position": [
+              -0.02,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "rec",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "share",
+          "name": "Share",
+          "content": {
+            "type": "asset",
+            "asset": "share-button"
+          },
+          "transform": {
+            "position": [
+              0.02,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "share",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
         }
       ]
     },

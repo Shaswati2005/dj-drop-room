@@ -78,6 +78,28 @@ function smallButton(name: string, color: string, width: number, depth: number):
   );
 }
 
+/** A small button with a flat icon on its cap (the cap top is the origin). */
+function iconButton(name: string, color: string, width: number, depth: number, icon: Object3D): Group {
+  const root = smallButton(name, color, width, depth);
+  const cap = root.getObjectByName('Cap')!;
+  icon.position.set(0, 0.0044, 0);
+  cap.add(icon);
+  return root;
+}
+
+const dot = () => named(new Mesh(new CylinderGeometry(0.0055, 0.0055, 0.0006, 24), materials.white), 'RecDot');
+const arrow = () => {
+  const tri = named(new Mesh(new CylinderGeometry(0.006, 0.006, 0.0006, 3), materials.white), 'ShareIcon');
+  tri.rotation.y = Math.PI / 2;
+  return tri;
+};
+
+/** Crate load buttons: deck-coloured, poke to load the slot's track there. */
+export const createLoadButtonA = () => smallButton('LoadButtonA', DECK_COLORS.A, 0.034, 0.02);
+export const createLoadButtonB = () => smallButton('LoadButtonB', DECK_COLORS.B, 0.034, 0.02);
+export const createRecButton = () => iconButton('RecButton', '#FF2D2D', 0.032, 0.02, dot());
+export const createShareButton = () => iconButton('ShareButton', '#7C8CFF', 0.032, 0.02, arrow());
+
 export const createSyncButton = () => smallButton('SyncButton', '#FFB020', 0.03, 0.018);
 export const createModeButton = () => smallButton('ModeButton', '#FFFFFF', 0.033, 0.013);
 export const createFxButton = () => smallButton('FxButton', '#38E8FF', 0.032, 0.022);

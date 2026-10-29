@@ -3,6 +3,7 @@ import type { Entity } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
 import { KNOBS, PAD_MODES } from '../audio/engine.js';
 import type { DeckView, EngineState, KnobControl } from '../audio/engine.js';
+import { CRATE_ORDER } from '../audio/tracks/catalog.js';
 import { ButtonActions, Fader, Knob, MusicState, PerfPad, PushButton } from '../console-components.js';
 
 /** Pad colours per mode (stem colours; hot cues A-D in the usual DJ-software colours). */
@@ -37,6 +38,14 @@ export class MusicStateMirrorSystem extends createSystem({
       entity.setValue(MusicState, 'latencyMs', s.latencyMs);
       entity.setValue(MusicState, 'level', s.level);
       entity.setValue(MusicState, 'drops', s.drops);
+      entity.setValue(MusicState, 'trackA', s.A.trackId);
+      entity.setValue(MusicState, 'trackB', s.B.trackId);
+      entity.setValue(MusicState, 'recording', s.recording);
+      entity.setValue(MusicState, 'takes', s.takes);
+      entity.setValue(MusicState, 'recBytes', s.recBytes);
+      entity.setValue(MusicState, 'refusals', s.refusals);
+      entity.setValue(MusicState, 'shares', s.shares);
+      entity.setValue(MusicState, 'moves', s.moves);
       entity.setValue(MusicState, 'bpmA', s.A.bpm);
       entity.setValue(MusicState, 'bpmB', s.B.bpm);
       entity.setValue(MusicState, 'positionA', s.A.position);
@@ -104,6 +113,7 @@ export class MusicStateMirrorSystem extends createSystem({
     const view = entity.getValue(PushButton, 'deck') === 'B' ? s.B : s.A;
     const other = view === s.A ? s.B : s.A;
     let lit = false;
+    let refused = false;
     switch (action) {
       case ButtonActions.start:
         lit = !s.running;
@@ -131,10 +141,21 @@ export class MusicStateMirrorSystem extends createSystem({
         // charged while the riser builds, and for a bar after it lands
         lit = s.dropping || (s.drops > 0 && s.heard - s.dropAt < 240 / s.bpm);
         break;
+      case ButtonActions.load:
+        // lit while its track is on this deck; flashes amber when a load onto a playing deck was refused
+        lit = view.trackId === CRATE_ORDER[entity.getValue(PushButton, 'index') ?? 0];
+        refused = s.refusedDeck === (view === s.A ? 'A' : 'B') && s.heard - s.refusedAt < 0.8;
+        break;
+      case ButtonActions.rec:
+        lit = s.recording;
+        break;
+      case ButtonActions.share:
+        lit = false;
+        break;
       default:
         lit = view.playing;
     }
     entity.setValue(PushButton, 'lit', lit);
-    entity.setValue(PushButton, 'armed', (action === ButtonActions.play && view.playArmed) || (action === ButtonActions.drop && s.dropping));
+    entity.setValue(PushButton, 'armed', refused || (action === ButtonActions.play && view.playArmed) || (action === ButtonActions.drop && s.dropping));
   }
 }

@@ -11,6 +11,9 @@ export const ButtonActions = {
   space: 'space',
   drop: 'drop',
   fade: 'fade',
+  load: 'load',
+  rec: 'rec',
+  share: 'share',
 } as const;
 export const KnobControls = { trim: 'trim', high: 'high', mid: 'mid', low: 'low', filter: 'filter' } as const;
 export const FaderControls = { channel: 'channel', tempo: 'tempo', crossfader: 'crossfader' } as const;
@@ -45,7 +48,7 @@ export const Fader = createComponent('Fader', {
 });
 
 /** A poke button with a single action, e.g. PLAY for a deck or Start;
- * `index` picks the pad mode for mode buttons. */
+ * `index` picks the pad mode for mode buttons and the crate slot for load buttons. */
 export const PushButton = createComponent('PushButton', {
   action: { type: Types.Enum, enum: ButtonActions, default: ButtonActions.play },
   deck: { type: Types.Enum, enum: Decks, default: Decks.A },
@@ -96,4 +99,12 @@ export const MusicState = createComponent('MusicState', {
   latencyMs: { type: Types.Float32, default: 0 },
   level: { type: Types.Float32, default: 0 },
   drops: { type: Types.Int32, default: 0, help: 'DROPs landed so far' },
+  trackA: { type: Types.String, default: '', help: 'Track id on deck A' },
+  trackB: { type: Types.String, default: '' },
+  recording: { type: Types.Boolean, default: false, help: 'REC is recording' },
+  takes: { type: Types.Int32, default: 0, help: 'Finished recordings' },
+  recBytes: { type: Types.Int32, default: 0, help: 'Size of the last recording (bytes)' },
+  refusals: { type: Types.Int32, default: 0, help: 'Crate loads refused because the deck was playing' },
+  shares: { type: Types.Int32, default: 0, help: 'SHARE pokes' },
+  moves: { type: Types.Int32, default: 0, help: 'Moves in the set log' },
 });

@@ -1,6 +1,8 @@
 import { createSystem, Pressed } from '@iwsdk/core';
 import { liveEngine, unlockAudio } from '../audio/live.js';
 import { PAD_MODES } from '../audio/engine.js';
+import { CRATE_ORDER } from '../audio/tracks/catalog.js';
+import { offerRecording, shareSet } from '../share.js';
 import type { DeckId } from '../audio/deck.js';
 import { ButtonActions, PerfPad, PushButton } from '../console-components.js';
 
@@ -70,6 +72,22 @@ export class ConsoleInputSystem extends createSystem({
             break;
           case ButtonActions.drop:
             engine.drop();
+            break;
+          case ButtonActions.load: {
+            // refused (with a flash on the shelf) when the deck is playing
+            const loaded = engine.requestLoad(deck, CRATE_ORDER[entity.getValue(PushButton, 'index') ?? 0]);
+            engine.click(loaded !== 'refused');
+            return;
+          }
+          case ButtonActions.rec: {
+            const stopped = engine.recorder.toggle();
+            if (stopped != null) void stopped.then(() => offerRecording());
+            engine.click(engine.recorder.recording);
+            return;
+          }
+          case ButtonActions.share:
+            engine.shares++;
+            void shareSet();
             break;
           default:
             engine.togglePlay(deck);

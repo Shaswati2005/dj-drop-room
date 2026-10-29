@@ -15,7 +15,12 @@ export function setPresentingProbe(probe: () => boolean): void {
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
 
+/** The last thing SHARE/REC told the player, for the shelf's status screen. */
+export const notice = { text: '', at: -1e9 };
+
 function status(text: string): void {
+  notice.text = text;
+  notice.at = performance.now();
   const el = $('set-status');
   if (el != null) el.textContent = text;
 }

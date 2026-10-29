@@ -99,6 +99,9 @@ export const TRACKS: Record<string, TrackDef> = {
   [RAINY_TAPE.id]: RAINY_TAPE,
 };
 
+/** The tracks in the crate, in shelf order (left to right). */
+export const CRATE_ORDER: readonly string[] = [WARM_START.id, CONCRETE.id, MIRRORBALL.id, RAINY_TAPE.id];
+
 export const GENERATORS: Partial<Record<Genre, Generator>> = { house, techno, 'nu-disco': nuDisco, lofi };
 
 export function generatorFor(track: TrackDef): Generator {
