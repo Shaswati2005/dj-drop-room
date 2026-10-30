@@ -97,6 +97,12 @@ const arrow = () => {
 /** Crate load buttons: deck-coloured, poke to load the slot's track there. */
 export const createLoadButtonA = () => smallButton('LoadButtonA', DECK_COLORS.A, 0.034, 0.02);
 export const createLoadButtonB = () => smallButton('LoadButtonB', DECK_COLORS.B, 0.034, 0.02);
+const ring = () => {
+  const r = named(new Mesh(new TorusGeometry(0.0055, 0.0013, 8, 24), materials.white), 'ClubIcon');
+  r.rotation.x = Math.PI / 2;
+  return r;
+};
+export const createClubButton = () => iconButton('ClubButton', '#B35CFF', 0.032, 0.022, ring());
 export const createRecButton = () => iconButton('RecButton', '#FF2D2D', 0.032, 0.02, dot());
 export const createShareButton = () => iconButton('ShareButton', '#7C8CFF', 0.032, 0.02, arrow());
 

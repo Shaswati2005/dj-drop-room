@@ -4,6 +4,7 @@ import { liveEngine } from '../audio/live.js';
 import { KNOBS, PAD_MODES } from '../audio/engine.js';
 import type { DeckView, EngineState, KnobControl } from '../audio/engine.js';
 import { CRATE_ORDER } from '../audio/tracks/catalog.js';
+import { club } from '../show/club-state.js';
 import { ButtonActions, Fader, Knob, MusicState, PerfPad, PushButton } from '../console-components.js';
 
 /** Pad colours per mode (stem colours; hot cues A-D in the usual DJ-software colours). */
@@ -46,6 +47,7 @@ export class MusicStateMirrorSystem extends createSystem({
       entity.setValue(MusicState, 'refusals', s.refusals);
       entity.setValue(MusicState, 'shares', s.shares);
       entity.setValue(MusicState, 'moves', s.moves);
+      entity.setValue(MusicState, 'club', club.on);
       entity.setValue(MusicState, 'bpmA', s.A.bpm);
       entity.setValue(MusicState, 'bpmB', s.B.bpm);
       entity.setValue(MusicState, 'positionA', s.A.position);
@@ -148,6 +150,11 @@ export class MusicStateMirrorSystem extends createSystem({
         break;
       case ButtonActions.rec:
         lit = s.recording;
+        break;
+      case ButtonActions.club:
+        lit = club.on;
+        // once a drop has landed, CLUB pulses: the offer, never forced
+        refused = !club.on && s.drops > 0;
         break;
       case ButtonActions.share:
         lit = false;

@@ -105,6 +105,8 @@ function crate(): Node[] {
     nodes.push(node(`load-${track}-b`, 'load-button-b', L.slotXs[i] + L.buttonDx, y, L.buttonZ, button('B', 'load', i)));
   });
   nodes.push(node('rec', 'rec-button', L.rec[0], y, L.rec[1], button('A', 'rec')));
+  // CLUB toggle: centre of the mixer, between the beat-FX buttons and the crossfader
+  nodes.push(node('club', 'club-button', 0, y, 0.09, button('A', 'club')));
   nodes.push(node('share', 'share-button', L.share[0], y, L.share[1], button('A', 'share')));
   return nodes;
 }

@@ -1,8 +1,10 @@
 import { defineAssets } from '@iwsdk/core';
 import { createConsoleBody } from './scene-assets/console-body.scene-asset.js';
+import { createClubRoom } from './scene-assets/club.scene-asset.js';
 import { createLightRig } from './scene-assets/light-rig.scene-asset.js';
 import {
   createChannelFaderCap,
+  createClubButton,
   createCrossfaderCap,
   createCueButton,
   createDropButton,
@@ -48,5 +50,7 @@ export default defineAssets({
   'load-button-b': createLoadButtonB(),
   'rec-button': createRecButton(),
   'share-button': createShareButton(),
+  'club-button': createClubButton(),
+  'club-room': createClubRoom(),
   'light-rig': createLightRig(),
 });

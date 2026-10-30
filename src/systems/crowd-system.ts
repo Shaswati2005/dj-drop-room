@@ -15,6 +15,7 @@ import {
 import type { Entity } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
 import { ConsoleRoot } from '../console-components.js';
+import { club } from '../show/club-state.js';
 import { CrowdEnergy } from '../show/crowd-energy.js';
 import { consoleSurface } from './console-placement-system.js';
 
@@ -94,7 +95,8 @@ export class CrowdSystem extends createSystem({
     const engine = liveEngine();
     const s = engine.state;
     const energy = this.crowd.update(s, delta);
-    if (!s.running) {
+    // the miniature table crowd gives way to the club (a proper crowd comes on Day 11)
+    if (!s.running || club.on) {
       this.root.visible = false;
       return;
     }

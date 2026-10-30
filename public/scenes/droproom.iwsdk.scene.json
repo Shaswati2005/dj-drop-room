@@ -1645,6 +1645,32 @@
           }
         },
         {
+          "id": "club",
+          "name": "Club",
+          "content": {
+            "type": "asset",
+            "asset": "club-button"
+          },
+          "transform": {
+            "position": [
+              0,
+              0.05,
+              0.09
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "club",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
           "id": "share",
           "name": "Share",
           "content": {
@@ -1735,6 +1761,27 @@
           "beyond": 0.5,
           "maxDim": 0.7,
           "settleDim": 0.35
+        }
+      }
+    },
+    {
+      "id": "club-room",
+      "name": "Club Room",
+      "content": {
+        "type": "asset",
+        "asset": "club-room"
+      },
+      "transform": {
+        "position": [
+          0,
+          0,
+          -0.42
+        ]
+      },
+      "components": {
+        "ClubRoom": {
+          "haze": 0.09,
+          "ambient": 0.3
         }
       }
     }

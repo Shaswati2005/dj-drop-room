@@ -14,6 +14,7 @@ export const ButtonActions = {
   load: 'load',
   rec: 'rec',
   share: 'share',
+  club: 'club',
 } as const;
 export const KnobControls = { trim: 'trim', high: 'high', mid: 'mid', low: 'low', filter: 'filter' } as const;
 export const FaderControls = { channel: 'channel', tempo: 'tempo', crossfader: 'crossfader' } as const;
@@ -76,6 +77,12 @@ export const LightRig = createComponent('LightRig', {
   settleDim: { type: Types.Float32, default: 0.35, help: 'Room dimming after a drop has landed' },
 });
 
+/** The club-mode warehouse (hidden until the CLUB button): haze and how dark the room is. */
+export const ClubRoom = createComponent('ClubRoom', {
+  haze: { type: Types.Float32, default: 0.09, min: 0, max: 0.3, help: 'Fog density (per metre) while in the club' },
+  ambient: { type: Types.Float32, default: 0.3, min: 0, max: 1, help: 'Environment light while in the club (1 = as in the room)' },
+});
+
 /** Singleton mirror of what the audio engine believes, for tests and the show. */
 export const MusicState = createComponent('MusicState', {
   audioRunning: { type: Types.Boolean, default: false },
@@ -107,4 +114,5 @@ export const MusicState = createComponent('MusicState', {
   refusals: { type: Types.Int32, default: 0, help: 'Crate loads refused because the deck was playing' },
   shares: { type: Types.Int32, default: 0, help: 'SHARE pokes' },
   moves: { type: Types.Int32, default: 0, help: 'Moves in the set log' },
+  club: { type: Types.Boolean, default: false, help: 'Club mode (opaque warehouse around the booth) is on' },
 });

@@ -40,7 +40,7 @@ for (const name of ['verify-audio', 'verify-decks', 'verify-mixer', 'verify-drop
   const found = lines(text);
   record(name, found.length ? found : [`FAIL no results: ${text.slice(0, 200)}`]);
 }
-for (const name of ['verify-console', 'verify-all-controls', 'verify-coach', 'verify-placement', 'verify-pause', 'verify-crate']) {
+for (const name of ['verify-console', 'verify-all-controls', 'verify-coach', 'verify-placement', 'verify-pause', 'verify-crate', 'verify-club']) {
   fresh();
   // the every-control sweep takes ~12 minutes of CLI round trips
   const found = lines(sh(`node scripts/${name}.mjs`, 1800000));

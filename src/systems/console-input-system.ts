@@ -2,6 +2,7 @@ import { createSystem, Pressed } from '@iwsdk/core';
 import { liveEngine, unlockAudio } from '../audio/live.js';
 import { PAD_MODES } from '../audio/engine.js';
 import { CRATE_ORDER } from '../audio/tracks/catalog.js';
+import { club, setClub } from '../show/club-state.js';
 import { offerRecording, shareSet } from '../share.js';
 import type { DeckId } from '../audio/deck.js';
 import { ButtonActions, PerfPad, PushButton } from '../console-components.js';
@@ -47,6 +48,12 @@ export class ConsoleInputSystem extends createSystem({
         if (action === ButtonActions.start) {
           unlockAudio();
           void engine.start().then(() => engine.click());
+          return;
+        }
+        // the club toggle works before the music starts, too
+        if (action === ButtonActions.club) {
+          setClub(!club.on);
+          engine.click(club.on);
           return;
         }
         if (!engine.state.running) return;

@@ -2,6 +2,9 @@ import { BackSide, Color, InstancedMesh, CustomBlending, OneFactor, OneMinusSrcA
 import type { Entity, Object3D } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
 import { ConsoleRoot, LightRig } from '../console-components.js';
+import { CLUB_RIG, club } from '../show/club-state.js';
+import { newShowFrame, readShow } from '../show/show-clock.js';
+import type { ShowFrame } from '../show/show-clock.js';
 import { PIXEL_BARS, PIXEL_OFF, PIXELS, pixelIndex, RIG_HEADS } from '../scene-assets/light-rig.scene-asset.js';
 
 /** Seconds for the rig to fade in once the first riser starts. */
@@ -40,9 +43,11 @@ export class LightShowSystem extends createSystem({
   private forward!: Vector3;
   private revealedAt = -1;
   private time = 0;
+  private show!: ShowFrame;
 
   init(): void {
     this.fixtures = [];
+    this.show = newShowFrame();
     this.pixelOff = new Color(PIXEL_OFF);
     this.color = new Color();
     this.at = new Vector3();
@@ -107,7 +112,9 @@ export class LightShowSystem extends createSystem({
     const rig = this.rigObject!;
     const engine = liveEngine();
     const s = engine.state;
-    const started = s.dropping || s.drops > 0;
+    // in the club the rig is always up: an idle show until the first drop
+    const inClub = club.on;
+    const started = s.dropping || s.drops > 0 || inClub;
 
     // the room dimmer, centred on the head
     const maxDim = rigEntity.getValue(LightRig, 'maxDim') ?? 0.7;
@@ -121,6 +128,8 @@ export class LightShowSystem extends createSystem({
       const t = Math.min(1, (s.heard - s.dropAt) / SETTLE);
       dim = maxDim + (settleDim - maxDim) * t;
     }
+    // the club's walls already hide the room: no veil
+    if (inClub) dim = 0;
     this.domeMaterial.opacity = dim;
     this.dome.visible = dim > 0.001;
     this.world.camera.getWorldPosition(this.at);
@@ -130,22 +139,15 @@ export class LightShowSystem extends createSystem({
       rig.visible = false;
       return;
     }
+    if (!inClub && rig.scale.x !== 1) rig.scale.setScalar(1);
     if (this.revealedAt < 0) this.revealedAt = this.time;
-    const reveal = Math.min(1, (this.time - this.revealedAt) / REVEAL);
+    const reveal = inClub ? 1 : Math.min(1, (this.time - this.revealedAt) / REVEAL);
     rig.visible = true;
-    this.placeRig(rigEntity, rig);
+    if (inClub) this.placeRigInClub(rig);
+    else this.placeRig(rigEntity, rig);
 
-    // beat phase of the master deck, as heard
-    const deck = engine.decks[s.master];
-    const beats = deck.track == null ? this.time * 2 : deck.position(s.heard) / (deck.barSeconds / 4);
-    const phase = beats - Math.floor(beats);
-    const pulse = Math.exp(-phase * 5);
-    const sinceDrop = s.drops > 0 ? s.heard - s.dropAt : Infinity;
-    const flash = sinceDrop >= 0 && sinceDrop < 0.5 ? 1 - sinceDrop / 0.5 : 0;
+    const { beats, pulse, flash, energy, hue } = readShow(this.show, this.time);
     const view = s[s.master];
-    const energy = view.section === 'drop' ? 1 : view.section === 'build' ? 0.7 : 0.45;
-    // a new palette every phrase (8 bars)
-    const hue = (Math.floor(beats / 32) * 0.17) % 1;
 
     for (let i = 0; i < this.fixtures.length; i++) {
       const f = this.fixtures[i];
@@ -166,6 +168,21 @@ export class LightShowSystem extends createSystem({
       for (let k = 0; k < PIXELS; k++) pixels.setColorAt(pixelIndex(j, k), PIXELS - 1 - k < lit ? this.color : this.pixelOff);
     }
     pixels.instanceColor!.needsUpdate = true;
+  }
+
+  /** In the club: the same rig, scaled up and hung over the booth, truss at CLUB_RIG.height above the floor. */
+  private placeRigInClub(rig: Object3D): void {
+    const consoleObject = this.consoleEntity?.object3D;
+    if (consoleObject == null) return;
+    consoleObject.getWorldPosition(this.at);
+    this.forward.setFromMatrixColumn(consoleObject.matrixWorld, 2).negate();
+    this.forward.y = 0;
+    this.forward.normalize();
+    this.at.y = CLUB_RIG.height;
+    rig.parent?.worldToLocal(this.at);
+    rig.position.copy(this.at);
+    rig.rotation.set(0, Math.atan2(-this.forward.x, -this.forward.z), 0);
+    rig.scale.setScalar(CLUB_RIG.scale);
   }
 
   /** Hang the ring above the console, a little beyond it, level with the floor. */
