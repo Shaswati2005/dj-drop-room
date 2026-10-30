@@ -199,6 +199,15 @@ export class Engine {
   private crossfader = 0;
   private fade: { from: number; to: number; start: number; seconds: number } | null = null;
   private preloaded: Promise<void> | null = null;
+  private readonly crateSlots: CrateSlot[] = CRATE_ORDER.map((id) => ({
+    trackId: id,
+    name: TRACKS[id].name,
+    bpm: TRACKS[id].bpm,
+    key: camelot(TRACKS[id].key),
+    onA: false,
+    onB: false,
+    match: false,
+  }));
   private replay: { moves: Move[]; next: number; start: number } | null = null;
   private pendingReplay: Move[] | null = null;
   private replaying = false;
@@ -284,21 +293,16 @@ export class Engine {
   }
 
   /** The crate as the shelf shows it. Tracks are compared with the deck that
-   * is playing (or deck A when none is). */
-  crate(): CrateSlot[] {
+   * is playing (or deck A when none is). The same slot objects are refreshed
+   * on every call (the shelf reads it each frame), so nothing is allocated. */
+  crate(): readonly CrateSlot[] {
     const ref = this.decks[this.decks.B.isRunning && !this.decks.A.isRunning ? 'B' : 'A'].track;
-    return CRATE_ORDER.map((id) => {
-      const t = TRACKS[id];
-      return {
-        trackId: id,
-        name: t.name,
-        bpm: t.bpm,
-        key: camelot(t.key),
-        onA: this.decks.A.track?.id === id,
-        onB: this.decks.B.track?.id === id,
-        match: ref != null && ref.id !== id && mixesWith(t, ref),
-      };
-    });
+    for (const slot of this.crateSlots) {
+      slot.onA = this.decks.A.track?.id === slot.trackId;
+      slot.onB = this.decks.B.track?.id === slot.trackId;
+      slot.match = ref != null && ref.id !== slot.trackId && mixesWith(TRACKS[slot.trackId], ref);
+    }
+    return this.crateSlots;
   }
 
   async loadTrack(deck: DeckId, trackId: string): Promise<void> {

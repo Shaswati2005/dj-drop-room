@@ -1,7 +1,7 @@
 import { CanvasTexture, createSystem, MeshBasicMaterial, SRGBColorSpace } from '@iwsdk/core';
 import type { Mesh } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
-import type { CrateSlot } from '../audio/engine.js';
+import type { CrateSlot, EngineState } from '../audio/engine.js';
 import { ConsoleRoot } from '../console-components.js';
 import { notice } from '../share.js';
 
@@ -66,8 +66,8 @@ export class CrateSystem extends createSystem({
     this.since = 0;
     const engine = liveEngine();
     const crate = engine.crate();
-    crate.forEach((slot, i) => this.drawSlot(this.slots[i], slot));
-    this.drawStatus(this.status!, engine.update());
+    for (let i = 0; i < crate.length; i++) this.drawSlot(this.slots[i], crate[i]);
+    this.drawStatus(this.status!, engine.state);
   }
 
   private drawSlot(face: Face, slot: CrateSlot): void {
@@ -113,7 +113,7 @@ export class CrateSystem extends createSystem({
     face.texture.needsUpdate = true;
   }
 
-  private drawStatus(face: Face, s: ReturnType<ReturnType<typeof liveEngine>['update']>): void {
+  private drawStatus(face: Face, s: EngineState): void {
     let line1: string;
     let line2 = '';
     let color: string;
