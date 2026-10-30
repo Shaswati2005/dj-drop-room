@@ -101,8 +101,8 @@ function crate(): Node[] {
   const L = CRATE_LAYOUT;
   const y = BODY.top + PRESS_HEIGHT.small;
   CRATE_ORDER.forEach((track, i) => {
-    nodes.push(node(`load-${track}-a`, 'load-button-a', L.slotXs[i] - L.buttonDx, y, L.buttonZ, button('A', 'load', i)));
-    nodes.push(node(`load-${track}-b`, 'load-button-b', L.slotXs[i] + L.buttonDx, y, L.buttonZ, button('B', 'load', i)));
+    nodes.push(node(`load-${track}-a`, 'load-button-a', L.slotXs[i], y, L.buttonZA, button('A', 'load', i)));
+    nodes.push(node(`load-${track}-b`, 'load-button-b', L.slotXs[i], y, L.buttonZB, button('B', 'load', i)));
   });
   nodes.push(node('rec', 'rec-button', L.rec[0], y, L.rec[1], button('A', 'rec')));
   // CLUB toggle: centre of the mixer, between the beat-FX buttons and the crossfader

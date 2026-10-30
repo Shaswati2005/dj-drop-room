@@ -22,7 +22,7 @@ export class Sequencer {
     /** schedule only this stem (stem renders); all stems when omitted */
     private readonly only?: Stem,
   ) {
-    this.kit = new DeckKit(context);
+    this.kit = new DeckKit(context, track.genre);
     this.output = new Tone.Gain({ context });
     for (const gain of [this.kit.drums, this.kit.bass, this.kit.chords, this.kit.melody]) gain.connect(this.output);
     this.trackBar = startBar;

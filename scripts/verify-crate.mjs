@@ -62,13 +62,13 @@ const until = (fn, seconds = 5) => {
 };
 const hasName = (n) => ids[n] != null;
 
-check('crate shelf has 8 load buttons, REC and SHARE', ['Load Warm Start A', 'Load Warm Start B', 'Load Concrete A', 'Load Concrete B', 'Load Mirrorball A', 'Load Mirrorball B', 'Load Rainy Tape A', 'Load Rainy Tape B', 'Rec', 'Share'].every(hasName));
+check('crate shelf has 12 load buttons, REC and SHARE', ['Load Warm Start A', 'Load Warm Start B', 'Load Concrete A', 'Load Concrete B', 'Load Mirrorball A', 'Load Mirrorball B', 'Load Rainy Tape A', 'Load Rainy Tape B', 'Load Airlock A', 'Load Airlock B', 'Load Sunrise A', 'Load Sunrise B', 'Rec', 'Share'].every(hasName));
 
 // everything stays inside the console's width (62 cm): shelf 60 cm, buttons within it
 const scene = JSON.parse(fs.readFileSync(cwd + '/public/scenes/droproom.iwsdk.scene.json', 'utf8'));
 const consoleNode = scene.nodes.find((n) => n.id === 'console');
 const crateNodes = consoleNode.children.filter((n) => /^(load-|rec$|share$)/.test(n.id));
-check('crate buttons all sit inside +-0.30 m of the console centre', crateNodes.length === 10 && crateNodes.every((n) => Math.abs(n.transform.position[0]) <= 0.3), `max |x| ${Math.max(...crateNodes.map((n) => Math.abs(n.transform.position[0]))).toFixed(3)}`);
+check('crate buttons all sit inside +-0.30 m of the console centre', crateNodes.length === 14 && crateNodes.every((n) => Math.abs(n.transform.position[0]) <= 0.3), `max |x| ${Math.max(...crateNodes.map((n) => Math.abs(n.transform.position[0]))).toFixed(3)}`);
 
 press('Start Pad');
 check('START starts the music (Warm Start on A, Concrete on B)', until(() => music().audioRunning && music().playingA && music().trackA === 'warm-start' && music().trackB === 'concrete'));

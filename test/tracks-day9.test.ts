@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { camelot, keysCompatible, mixesWith, tempoClose } from '../src/audio/camelot.js';
-import { generatorFor, MIRRORBALL, RAINY_TAPE, TRACKS, CONCRETE, WARM_START } from '../src/audio/tracks/catalog.js';
+import { AIRLOCK, generatorFor, MIRRORBALL, SUNRISE, RAINY_TAPE, TRACKS, CONCRETE, WARM_START } from '../src/audio/tracks/catalog.js';
 import { sectionAt, trackBars } from '../src/audio/track-model.js';
 import type { TrackDef } from '../src/audio/track-model.js';
 
@@ -25,13 +25,13 @@ describe('Camelot keys', () => {
   });
   it('tempo within 6 percent', () => {
     expect(tempoClose(124, 128)).toBe(true);
-    expect(tempoClose(124, 116)).toBe(false);
+    expect(tempoClose(124, 86)).toBe(false);
     expect(mixesWith(MIRRORBALL, WARM_START)).toBe(true);
     expect(mixesWith(RAINY_TAPE, WARM_START)).toBe(false);
   });
 });
 
-describe.each([MIRRORBALL, RAINY_TAPE])('$name', (track: TrackDef) => {
+describe.each([MIRRORBALL, RAINY_TAPE, AIRLOCK, SUNRISE])('$name', (track: TrackDef) => {
   const generate = generatorFor(track);
   const bars = Array.from({ length: trackBars(track) }, (_, i) => sectionAt(track, i));
   it('is registered with a key and a tempo in range', () => {

@@ -1,10 +1,12 @@
 import { Vector3 } from '@iwsdk/core';
 import type { World } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
-import { renderOffline, renderStem, toPcm16Base64 } from '../audio/render/render.js';
+import { renderOffline, renderStem, renderStemChunk, toPcm16Base64 } from '../audio/render/render.js';
 import type { DeckId } from '../audio/deck.js';
 import { STEMS } from '../audio/track-model.js';
 import { club, setClub } from '../show/club-state.js';
+import { crowdState } from '../show/crowd-state.js';
+import { lights, resetLightPeaks } from '../show/light-state.js';
 import { buildSetUrl, offerRecording, saveRecording, shareSet } from '../share.js';
 import type { Stem } from '../audio/track-model.js';
 
@@ -23,6 +25,9 @@ import type { Stem } from '../audio/track-model.js';
  * - setUrl(): the share link for the set so far; shareSet() also shows/copies it
  * - saveRecording(): share or download the last REC take
  * - club(): club mode state (on, changes, reducedFlash, LED wall brightness); setClub(on) switches it
+ * - crowd(): the crowd (context table/club, dancers drawn, how many in each state, tier, draw calls); forceHype(v | null) pins its energy 0..1
+ * - lights(): the light show (tier, heads lit, riser dim, drop burst, sweep speed, peaks, strobe-guard counts); resetLightPeaks()
+ * - drawCalls(): renderer draw calls and triangles of the last frame
  * - engine(): the live engine, for mixer and pad calls; world: the ECS world
  */
 export function installDebugApi(world: World): void {
@@ -42,6 +47,7 @@ export function installDebugApi(world: World): void {
     tempo: (deck: DeckId, fader: number) => liveEngine().setTempo(deck, fader),
     renderOffline,
     renderStem: async (trackId: string, stem: Stem) => toPcm16Base64(await renderStem(trackId, stem)),
+    renderStemChunk: async (trackId: string, stem: Stem, fromBar: number, bars: number) => toPcm16Base64(await renderStemChunk(trackId, stem, fromBar, bars)),
     timing: () => {
       const e = liveEngine();
       const deck = e.decks.A.lastCommitTime >= e.decks.B.lastCommitTime ? e.decks.A : e.decks.B;
@@ -56,7 +62,17 @@ export function installDebugApi(world: World): void {
     setReducedFlash: (on: boolean) => {
       club.reducedFlash = on;
     },
-    crate: () => liveEngine().crate(),
+    crate: () => liveEngine().crate().map((slot) => ({ ...slot })),
+    crowd: () => ({ ...crowdState, counts: [...crowdState.counts] }),
+    forceHype: (value: number | null) => {
+      crowdState.force = value;
+    },
+    lights: () => ({ ...lights, colors: Array.from(lights.colors) }),
+    resetLightPeaks,
+    drawCalls: () => {
+      const info = world.renderer.info;
+      return { calls: info.render.calls, triangles: info.render.triangles };
+    },
     setUrl: buildSetUrl,
     shareSet,
     saveRecording,

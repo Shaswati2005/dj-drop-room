@@ -52,7 +52,7 @@ export const MIXER = {
 
 /**
  * The crate shelf behind the deck displays (day 9): a 60 cm plate (narrower
- * than the 62 cm console, so nothing leaves its width) holding four track
+ * than the 62 cm console, so nothing leaves its width) holding six track
  * slots, REC and SHARE. Each slot has a screen at the back (name, BPM, key)
  * and two load buttons (A, B) in front, nearest the player. Metres, in the
  * same console space as above.
@@ -61,13 +61,14 @@ export const CRATE_LAYOUT = {
   width: 0.6,
   /** shelf front edge (overlaps the chassis a little) and back edge */
   z0: -0.155,
-  z1: -0.248,
-  slotXs: [-0.245, -0.12, 0.12, 0.245] as const,
-  slotWidth: 0.116,
-  screen: { z: -0.228, depth: 0.03 },
-  /** load buttons: z, and x offset of the A and B buttons from the slot centre */
-  buttonZ: -0.188,
-  buttonDx: 0.028,
+  z1: -0.285,
+  /** six slots, three either side of the status screen (day 11); pitch 84 mm */
+  slotXs: [-0.258, -0.174, -0.09, 0.09, 0.174, 0.258] as const,
+  slotWidth: 0.084,
+  screen: { z: -0.265, depth: 0.03 },
+  /** load buttons sit stacked in the slot's column: deck A nearest the player, deck B behind it */
+  buttonZA: -0.188,
+  buttonZB: -0.226,
   /** REC and SHARE sit in the middle, status screen behind them */
   rec: [-0.02, -0.188] as const,
   share: [0.02, -0.188] as const,

@@ -1,4 +1,5 @@
 import * as Tone from 'tone';
+import { syncFactor } from './camelot.js';
 import { sectionAt, STEMS, trackBars } from './track-model.js';
 import type { Section, Stem, TrackDef } from './track-model.js';
 
@@ -186,6 +187,11 @@ export class Deck {
     return this.nextLineTime(time, this.barSeconds);
   }
 
+  /** Next 1/8-note line (where ECHO and SPACE start). */
+  nextEighthTime(time: number): number {
+    return this.nextLineTime(time, this.barSeconds / 8);
+  }
+
   nextBeatTime(time: number): number {
     return this.nextLineTime(time, this.barSeconds / 4);
   }
@@ -264,11 +270,14 @@ export class Deck {
   /** SYNC: match the master's tempo and, if both play, its position in the bar. */
   syncTo(master: Deck, now: number): void {
     if (master.track == null || this.track == null) return;
-    this.setRate(master.bpm / this.track.bpm, now);
+    // a double / half-time pair (drum & bass over lo-fi) locks at 2x / 0.5x
+    const factor = syncFactor(master.track?.bpm ?? master.bpm, this.track.bpm);
+    // a pair that cannot lock (lo-fi against house) goes as far as the tempo fader reaches
+    this.setRate(Math.max(1 - TEMPO_RANGE, Math.min(1 + TEMPO_RANGE, (master.bpm * factor) / this.track.bpm)), now);
     if (!this.isPlaying || !master.isPlaying) return;
     const at = now + 0.03;
     const mine = (this.position(at) / this.barSeconds) % 1;
-    const theirs = (master.position(at) / master.barSeconds) % 1;
+    const theirs = ((master.position(at) / master.barSeconds) * factor) % 1;
     let delta = theirs - mine;
     if (delta > 0.5) delta -= 1;
     if (delta < -0.5) delta += 1;

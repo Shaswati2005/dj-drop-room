@@ -1,8 +1,11 @@
-import { BackSide, Color, InstancedMesh, CustomBlending, OneFactor, OneMinusSrcAlphaFactor, SrcAlphaFactor, createSystem, Mesh, MeshBasicMaterial, MeshStandardMaterial, SphereGeometry, Vector3 } from '@iwsdk/core';
+import { BackSide, Color, CustomBlending, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, OneFactor, OneMinusSrcAlphaFactor, SphereGeometry, SrcAlphaFactor, Vector3, createSystem } from '@iwsdk/core';
 import type { Entity, Object3D } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
 import { ConsoleRoot, LightRig } from '../console-components.js';
 import { CLUB_RIG, club } from '../show/club-state.js';
+import { crowdState } from '../show/crowd-state.js';
+import { FlashGuard } from '../show/flash-guard.js';
+import { lights } from '../show/light-state.js';
 import { newShowFrame, readShow } from '../show/show-clock.js';
 import type { ShowFrame } from '../show/show-clock.js';
 import { PIXEL_BARS, PIXEL_OFF, PIXELS, pixelIndex, RIG_HEADS } from '../scene-assets/light-rig.scene-asset.js';
@@ -11,20 +14,31 @@ import { PIXEL_BARS, PIXEL_OFF, PIXELS, pixelIndex, RIG_HEADS } from '../scene-a
 const REVEAL = 1.2;
 /** Seconds the room takes to settle back after a drop lands. */
 const SETTLE = 3;
-
-interface Fixture {
-  pan: Object3D;
-  tilt: Object3D;
-  beam: MeshBasicMaterial;
-}
+/** Heads lit at each hype tier (PLAN 4.4: beams 4 to 6 to 8), and the order they join in. */
+const BEAMS_BY_TIER = [4, 4, 6, 8];
+const BEAM_ORDER = [0, 4, 2, 6, 1, 5, 3, 7];
+/** The riser dims the beams by this much by the top; the last beat before the drop goes (almost) dark. */
+const RISER_DIM = 0.6;
+const GAP_LEVEL = 0.08;
+/** Bars of fast sweeping after a drop lands, and how much faster. */
+const FAST_BARS = 2;
+const FAST_SWEEP = 3;
+/** Reduced-flash mode (PLAN 5.2): no beat pulse, bursts at a quarter, one sharp rise a second. */
+const REDUCED_BURST = 0.25;
+const REDUCED_PULSE = 0.6;
 
 /**
- * The show that answers the DROP (PLAN §1 "the lights go down in your room"):
+ * The show that answers the DROP (PLAN 1 "the lights go down in your room"):
  * a dark translucent dome around the player dims the real room through
  * passthrough as the riser builds (to `maxDim`) and settles after the drop
- * (`settleDim`); the light rig fades in on the first riser, its moving heads
- * sweep in time and flash on every drop, and the pixel bars bounce with the
- * master level and chase the beat. Before the first DROP none of this shows.
+ * (`settleDim`); the light rig fades in on the first riser. Its moving heads
+ * sweep with the phrase (wider every bar of the 8), light up by crowd-energy
+ * tier (4, 6, then 8 beams), dim 60 % over the riser, go dark on the gap beat,
+ * then burst on the drop and sweep fast for two bars. The pixel bars bounce
+ * with the master level and chase the beat. Everything bright goes through a
+ * strobe guard (at most 3 sharp rises a second; 1 and no beat pulse in
+ * reduced-flash mode). The rig is 8 draw calls; per frame the moving parts
+ * are copied into instance matrices, with no allocation.
  */
 export class LightShowSystem extends createSystem({
   rigs: { required: [LightRig] },
@@ -32,7 +46,12 @@ export class LightShowSystem extends createSystem({
 }) {
   private dome!: Mesh;
   private domeMaterial!: MeshBasicMaterial;
-  private fixtures!: Fixture[];
+  private pans: Object3D[] = [];
+  private tilts: Object3D[] = [];
+  private yokes: InstancedMesh | null = null;
+  private heads!: InstancedMesh;
+  private lenses!: InstancedMesh;
+  private beams!: InstancedMesh;
   private pixels: InstancedMesh | null = null;
   private pixelOff!: Color;
   private rigObject: Object3D | null = null;
@@ -41,17 +60,26 @@ export class LightShowSystem extends createSystem({
   private color!: Color;
   private at!: Vector3;
   private forward!: Vector3;
+  private invRig!: Matrix4;
+  private local!: Matrix4;
+  private gains = new Float32Array(RIG_HEADS);
+  private guard = new FlashGuard(3);
   private revealedAt = -1;
   private time = 0;
+  private sweepPhase = 0;
+  private sweepSpeed = 1;
   private show!: ShowFrame;
+  /** times of the last four sharp rises, newest first */
+  private recentSharp = new Float64Array(4).fill(-Infinity);
 
   init(): void {
-    this.fixtures = [];
     this.show = newShowFrame();
     this.pixelOff = new Color(PIXEL_OFF);
     this.color = new Color();
     this.at = new Vector3();
     this.forward = new Vector3();
+    this.invRig = new Matrix4();
+    this.local = new Matrix4();
     // a black veil over the real room: drawn first of all (opaque pass, low
     // render order, no depth test) so it darkens only what lies behind our
     // content, however near the room is; alpha blends like a normal
@@ -87,14 +115,16 @@ export class LightShowSystem extends createSystem({
   /** Collect the rig's animated parts once its asset has loaded. */
   private attach(entity: Entity): boolean {
     const rig = entity.object3D;
-    if (rig?.getObjectByName('Beam0') == null) return false;
+    const beams = rig?.getObjectByName('Beams');
+    if (rig == null || beams == null) return false;
     for (let i = 0; i < RIG_HEADS; i++) {
-      const beam = rig.getObjectByName(`Beam${i}`) as Mesh;
-      // each beam gets its own colour
-      const material = (beam.material as MeshBasicMaterial).clone();
-      beam.material = material;
-      this.fixtures.push({ pan: rig.getObjectByName(`Pan${i}`)!, tilt: rig.getObjectByName(`Tilt${i}`)!, beam: material });
+      this.pans.push(rig.getObjectByName(`Pan${i}`)!);
+      this.tilts.push(rig.getObjectByName(`Tilt${i}`)!);
     }
+    this.yokes = rig.getObjectByName('Yokes') as InstancedMesh;
+    this.heads = rig.getObjectByName('Heads') as InstancedMesh;
+    this.lenses = rig.getObjectByName('Lenses') as InstancedMesh;
+    this.beams = beams as InstancedMesh;
     this.pixels = rig.getObjectByName('Pixels') as InstancedMesh;
     this.rigObject = rig;
     rig.visible = false;
@@ -148,26 +178,106 @@ export class LightShowSystem extends createSystem({
 
     const { beats, pulse, flash, energy, hue } = readShow(this.show, this.time);
     const view = s[s.master];
+    const reduced = club.reducedFlash;
+    const beatSeconds = 60 / s.bpm;
 
-    for (let i = 0; i < this.fixtures.length; i++) {
-      const f = this.fixtures[i];
-      const swing = beats * 0.25 * Math.PI;
-      f.pan.rotation.y = Math.sin(swing + i * 0.8) * 0.9;
-      f.tilt.rotation.x = 0.55 + Math.sin(swing * 0.5 + i) * 0.35 + (s.dropping ? -0.3 : 0);
-      const intensity = reveal * (flash + (1 - flash) * energy * (0.35 + 0.65 * pulse));
-      this.color.setHSL((hue + (i % 2) * 0.5) % 1, flash > 0 ? 0.1 : 0.85, 0.5).multiplyScalar(intensity * 1.1);
-      f.beam.color.copy(this.color);
+    // hype tier: how many heads are up
+    const tier = crowdState.tier;
+    const wanted = BEAMS_BY_TIER[tier] ?? 4;
+    lights.tier = tier;
+    lights.beamsOn = wanted;
+
+    // riser: beams and wash dim by 60 % as it builds, and the last beat goes dark
+    let dimFactor = 1;
+    if (s.dropping) {
+      const t = Math.min(1, Math.max(0, (s.heard - s.dropFrom) / Math.max(0.01, s.dropAt - s.dropFrom)));
+      dimFactor = 1 - RISER_DIM * t;
+      const untilDrop = s.dropAt - s.heard;
+      if (untilDrop < beatSeconds) dimFactor = Math.min(dimFactor, GAP_LEVEL + (1 - GAP_LEVEL) * Math.max(0, untilDrop / beatSeconds) * 0.5);
     }
+    lights.dim = dimFactor;
 
-    const lit = Math.min(PIXELS, Math.round(Math.sqrt(view.level) * PIXELS * 1.3 * reveal + flash * PIXELS));
+    // the burst on the landing, capped in reduced-flash mode
+    const burst = flash * (reduced ? REDUCED_BURST : 1);
+    lights.burst = burst;
+    if (burst > lights.burstPeak) lights.burstPeak = burst;
+
+    // two bars of fast sweeping after the drop, easing back
+    const sinceDrop = s.drops > 0 ? s.heard - s.dropAt : Infinity;
+    const fast = sinceDrop >= 0 && sinceDrop < FAST_BARS * 4 * beatSeconds ? 1 - sinceDrop / (FAST_BARS * 4 * beatSeconds) : 0;
+    const targetSweep = 1 + (FAST_SWEEP - 1) * fast;
+    this.sweepSpeed += (targetSweep - this.sweepSpeed) * Math.min(1, delta * 4);
+    lights.sweep = this.sweepSpeed;
+    this.sweepPhase += delta * (s.bpm / 60) * this.sweepSpeed;
+    // the sweep opens up through the 8-bar phrase
+    const reach = 0.5 + 0.45 * ((view.phraseBar - 1) / 7);
+
+    // one brightness for the whole rig, through the strobe guard
+    const pulseEff = reduced ? REDUCED_PULSE : pulse;
+    const raw = reveal * dimFactor * (burst + (1 - burst) * energy * (0.35 + 0.65 * pulseEff));
+    const guard = this.guard;
+    guard.limit = reduced ? 1 : 3;
+    const before = guard.sharp;
+    const master = guard.step(Math.min(1, raw), this.time);
+    if (guard.sharp > before) {
+      this.noteSharp(this.time);
+      lights.sharpRises++;
+    }
+    if (master > lights.peak) lights.peak = master;
+
+    rig.updateMatrixWorld(true);
+    for (let k = 0; k < RIG_HEADS; k++) {
+      const i = BEAM_ORDER[k];
+      // heads join and leave with the tier: ease the gain rather than pop
+      const target = k < wanted ? 1 : 0;
+      this.gains[i] += (target - this.gains[i]) * Math.min(1, delta * 3);
+      const swing = this.sweepPhase * 0.25 * Math.PI;
+      this.pans[i].rotation.y = Math.sin(swing + i * 0.8) * reach * 1.7;
+      this.tilts[i].rotation.x = 0.55 + Math.sin(swing * 0.5 + i) * 0.35 + (s.dropping ? -0.3 : 0);
+      this.color.setHSL((hue + (i % 2) * 0.5) % 1, burst > 0.05 ? 0.1 : 0.85, 0.5).multiplyScalar(master * this.gains[i] * 1.1);
+      this.beams.setColorAt(i, this.color);
+      lights.colors[i * 3] = this.color.r;
+      lights.colors[i * 3 + 1] = this.color.g;
+      lights.colors[i * 3 + 2] = this.color.b;
+    }
+    this.beams.instanceColor!.needsUpdate = true;
+    this.syncInstances(rig);
+
+    const lit = Math.min(PIXELS, Math.round(Math.sqrt(view.level) * PIXELS * 1.3 * reveal * dimFactor + burst * PIXELS));
     const chase = Math.floor(beats) % PIXEL_BARS;
     const pixels = this.pixels!;
     for (let j = 0; j < PIXEL_BARS; j++) {
       // the beat's bar burns brighter; colours past 1 bloom like LEDs
-      this.color.setHSL((hue + j / PIXEL_BARS) % 1, 0.9, 0.55).multiplyScalar((j === chase ? 1.6 : 1) * reveal);
+      this.color.setHSL((hue + j / PIXEL_BARS) % 1, 0.9, 0.55).multiplyScalar((j === chase && !reduced ? 1.6 : 1) * reveal);
       for (let k = 0; k < PIXELS; k++) pixels.setColorAt(pixelIndex(j, k), PIXELS - 1 - k < lit ? this.color : this.pixelOff);
     }
     pixels.instanceColor!.needsUpdate = true;
+  }
+
+  /** Count sharp rises over any one second; more than the limit would be a violation (must never happen). */
+  private noteSharp(t: number): void {
+    const recent = this.recentSharp;
+    for (let k = recent.length - 1; k > 0; k--) recent[k] = recent[k - 1];
+    recent[0] = t;
+    const limit = club.reducedFlash ? 1 : 3;
+    if (t - recent[limit] < 1) lights.violations++;
+  }
+
+  /** Copy the posed pan / tilt groups into the instanced yokes, heads, lenses and beams. */
+  private syncInstances(rig: Object3D): void {
+    this.invRig.copy(rig.matrixWorld).invert();
+    for (let i = 0; i < RIG_HEADS; i++) {
+      this.local.multiplyMatrices(this.invRig, this.pans[i].matrixWorld);
+      this.yokes!.setMatrixAt(i, this.local);
+      this.local.multiplyMatrices(this.invRig, this.tilts[i].matrixWorld);
+      this.heads.setMatrixAt(i, this.local);
+      this.lenses.setMatrixAt(i, this.local);
+      this.beams.setMatrixAt(i, this.local);
+    }
+    this.yokes!.instanceMatrix.needsUpdate = true;
+    this.heads.instanceMatrix.needsUpdate = true;
+    this.lenses.instanceMatrix.needsUpdate = true;
+    this.beams.instanceMatrix.needsUpdate = true;
   }
 
   /** In the club: the same rig, scaled up and hung over the booth, truss at CLUB_RIG.height above the floor. */

@@ -29,3 +29,36 @@ export function tempoClose(a: number, b: number): boolean {
 export function mixesWith(track: TrackDef, reference: TrackDef): boolean {
   return keysCompatible(track.key, reference.key) && tempoClose(reference.bpm, track.bpm);
 }
+
+/** How a track's tempo relates to a reference deck's (PLAN §3.6, §3.8):
+ * `lock` within ±6 %, `double` / `half` when the track is within ±6 % of
+ * twice / half the reference (drum & bass over lo-fi), otherwise `glide`
+ * (the tempo would have to shift). */
+export type TempoRelation = 'lock' | 'double' | 'half' | 'glide';
+
+export function tempoRelation(reference: number, track: number): TempoRelation {
+  if (tempoClose(reference, track)) return 'lock';
+  if (tempoClose(reference * 2, track)) return 'double';
+  if (tempoClose(reference / 2, track)) return 'half';
+  return 'glide';
+}
+
+/** Multiplier on the reference tempo that SYNC aims for: 2 or 0.5 for a
+ * double / half-time pair, else 1. */
+export function syncFactor(reference: number, track: number): number {
+  const relation = tempoRelation(reference, track);
+  return relation === 'double' ? 2 : relation === 'half' ? 0.5 : 1;
+}
+
+/** Crate badge (PLAN §3.8): green = key and tempo fit; amber = tempo fits
+ * (locked, or at half/double time) but the keys clash, or the keys fit at
+ * half/double time; grey = the tempo would have to glide. */
+export type Badge = 'green' | 'amber' | 'grey';
+
+export function badgeFor(track: TrackDef, reference: TrackDef): Badge {
+  const relation = tempoRelation(reference.bpm, track.bpm);
+  const keys = keysCompatible(track.key, reference.key);
+  if (relation === 'glide') return 'grey';
+  if (relation === 'lock') return keys ? 'green' : 'amber';
+  return 'amber';
+}

@@ -1,5 +1,5 @@
 import * as Tone from 'tone';
-import type { DrumVoice } from '../track-model.js';
+import type { DrumVoice, Genre } from '../track-model.js';
 
 /** The instruments one deck plays through (PLAN §3.3). Created once per deck
  * with an explicit context and reused for every track; never per note. */
@@ -15,7 +15,9 @@ export class DeckKit {
   private readonly leadSynth: Tone.MonoSynth;
   private readonly nodes: Tone.ToneAudioNode[] = [];
 
-  constructor(context: Tone.BaseContext) {
+  /** `genre` only reshapes the voices a genre needs to sound like itself (drum & bass: tight kick, Reese bass, slow pad). */
+  constructor(context: Tone.BaseContext, genre?: Genre) {
+    const dnb = genre === 'dnb';
     const keep = <T extends Tone.ToneAudioNode>(node: T): T => {
       this.nodes.push(node);
       return node;
@@ -28,9 +30,9 @@ export class DeckKit {
     const kick = keep(
       new Tone.MembraneSynth({
         context,
-        pitchDecay: 0.045,
+        pitchDecay: dnb ? 0.03 : 0.045,
         octaves: 5,
-        envelope: { attack: 0.001, decay: 0.32, sustain: 0, release: 0.05 },
+        envelope: { attack: 0.001, decay: dnb ? 0.22 : 0.32, sustain: 0, release: 0.05 },
         volume: -2,
       }),
     );
@@ -60,10 +62,12 @@ export class DeckKit {
     this.bassSynth = keep(
       new Tone.MonoSynth({
         context,
-        oscillator: { type: 'sawtooth' },
-        filter: { type: 'lowpass', Q: 2, rolloff: -24 },
-        filterEnvelope: { attack: 0.005, decay: 0.15, sustain: 0.2, release: 0.1, baseFrequency: 110, octaves: 2.5 },
-        envelope: { attack: 0.005, decay: 0.2, sustain: 0.6, release: 0.08 },
+        oscillator: dnb ? { type: 'fatsawtooth', count: 2, spread: 22 } : { type: 'sawtooth' },
+        filter: { type: 'lowpass', Q: dnb ? 3 : 2, rolloff: -24 },
+        filterEnvelope: dnb
+          ? { attack: 0.01, decay: 0.3, sustain: 0.5, release: 0.1, baseFrequency: 80, octaves: 3 }
+          : { attack: 0.005, decay: 0.15, sustain: 0.2, release: 0.1, baseFrequency: 110, octaves: 2.5 },
+        envelope: dnb ? { attack: 0.01, decay: 0.2, sustain: 0.9, release: 0.1 } : { attack: 0.005, decay: 0.2, sustain: 0.6, release: 0.08 },
         volume: -8,
       }),
     );
@@ -76,12 +80,12 @@ export class DeckKit {
         maxPolyphony: 6,
         options: {
           oscillator: { type: 'sawtooth' },
-          envelope: { attack: 0.005, decay: 0.25, sustain: 0.15, release: 0.15 },
+          envelope: dnb ? { attack: 0.25, decay: 0.5, sustain: 0.6, release: 1.2 } : { attack: 0.005, decay: 0.25, sustain: 0.15, release: 0.15 },
         },
         volume: -9,
       }),
     );
-    const chordTone = keep(new Tone.Filter({ context, type: 'lowpass', frequency: 2200 }));
+    const chordTone = keep(new Tone.Filter({ context, type: 'lowpass', frequency: dnb ? 1400 : 2200 }));
     this.chordSynth.chain(chordTone, this.chords);
 
     this.leadSynth = keep(

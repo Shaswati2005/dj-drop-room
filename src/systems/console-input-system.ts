@@ -41,6 +41,10 @@ export class ConsoleInputSystem extends createSystem({
       }),
       this.queries.buttonPresses.subscribe('disqualify', (entity) => {
         this.released.set(entity.index, performance.now());
+        if (!engine.state.running) return;
+        const action = entity.getValue(PushButton, 'action');
+        if (action === ButtonActions.echo) engine.holdEcho(false);
+        else if (action === ButtonActions.space) engine.holdSpace(false);
       }),
       this.queries.buttonPresses.subscribe('qualify', (entity) => {
         if (this.bounced(entity.index)) return;
@@ -68,11 +72,12 @@ export class ConsoleInputSystem extends createSystem({
           case ButtonActions.mode:
             engine.setPadMode(deck, PAD_MODES[entity.getValue(PushButton, 'index') ?? 0]);
             break;
+          // held FX: the send ramps while the finger stays down (released below)
           case ButtonActions.echo:
-            engine.toggleEcho();
+            engine.holdEcho(true);
             break;
           case ButtonActions.space:
-            engine.toggleSpace();
+            engine.holdSpace(true);
             break;
           case ButtonActions.fade:
             engine.fadeTo(deck);

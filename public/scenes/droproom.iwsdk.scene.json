@@ -1419,7 +1419,7 @@
           },
           "transform": {
             "position": [
-              -0.273,
+              -0.258,
               0.05,
               -0.188
             ]
@@ -1445,9 +1445,9 @@
           },
           "transform": {
             "position": [
-              -0.217,
+              -0.258,
               0.05,
-              -0.188
+              -0.226
             ]
           },
           "components": {
@@ -1471,7 +1471,7 @@
           },
           "transform": {
             "position": [
-              -0.148,
+              -0.174,
               0.05,
               -0.188
             ]
@@ -1497,9 +1497,9 @@
           },
           "transform": {
             "position": [
-              -0.092,
+              -0.174,
               0.05,
-              -0.188
+              -0.226
             ]
           },
           "components": {
@@ -1523,7 +1523,7 @@
           },
           "transform": {
             "position": [
-              0.092,
+              -0.09,
               0.05,
               -0.188
             ]
@@ -1549,9 +1549,9 @@
           },
           "transform": {
             "position": [
-              0.148,
+              -0.09,
               0.05,
-              -0.188
+              -0.226
             ]
           },
           "components": {
@@ -1575,7 +1575,7 @@
           },
           "transform": {
             "position": [
-              0.217,
+              0.09,
               0.05,
               -0.188
             ]
@@ -1601,9 +1601,9 @@
           },
           "transform": {
             "position": [
-              0.273,
+              0.09,
               0.05,
-              -0.188
+              -0.226
             ]
           },
           "components": {
@@ -1611,6 +1611,110 @@
               "action": "load",
               "deck": "B",
               "index": 3,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-airlock-a",
+          "name": "Load Airlock A",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-a"
+          },
+          "transform": {
+            "position": [
+              0.174,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "A",
+              "index": 4,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-airlock-b",
+          "name": "Load Airlock B",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-b"
+          },
+          "transform": {
+            "position": [
+              0.174,
+              0.05,
+              -0.226
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "B",
+              "index": 4,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-sunrise-a",
+          "name": "Load Sunrise A",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-a"
+          },
+          "transform": {
+            "position": [
+              0.258,
+              0.05,
+              -0.188
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "A",
+              "index": 5,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "load-sunrise-b",
+          "name": "Load Sunrise B",
+          "content": {
+            "type": "asset",
+            "asset": "load-button-b"
+          },
+          "transform": {
+            "position": [
+              0.258,
+              0.05,
+              -0.226
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "load",
+              "deck": "B",
+              "index": 5,
               "lit": false,
               "armed": false
             },

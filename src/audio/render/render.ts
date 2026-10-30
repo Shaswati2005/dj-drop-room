@@ -53,6 +53,22 @@ export async function renderStem(trackId: string, stem: Stem): Promise<Float32Ar
   return render(track, 0, seconds, stem, RENDER_RATE);
 }
 
+/** Bars [fromBar, fromBar + bars) of one stem at RENDER_RATE, for the build
+ * script to render long drum stems in pieces (a whole drum stem can take
+ * longer than one browser-command lease). One bar of lead-in is rendered
+ * first and dropped, so tails and envelopes at the cut are the same as in a
+ * whole-track render. Sample cuts are rounded from the global bar grid, so
+ * consecutive chunks join to exactly `trackBars * barSeconds` samples. */
+export async function renderStemChunk(trackId: string, stem: Stem, fromBar: number, bars: number): Promise<Float32Array> {
+  const track = trackOf(trackId);
+  const barSeconds = 240 / track.bpm;
+  const lead = fromBar > 0 ? 1 : 0;
+  const all = await render(track, fromBar - lead, (bars + lead) * barSeconds, stem, RENDER_RATE);
+  const startSample = Math.round(RENDER_RATE * (fromBar * barSeconds)) - Math.round(RENDER_RATE * ((fromBar - lead) * barSeconds));
+  const length = Math.round(RENDER_RATE * ((fromBar + bars) * barSeconds)) - Math.round(RENDER_RATE * (fromBar * barSeconds));
+  return all.slice(startSample, startSample + length);
+}
+
 function rms(data: Float32Array): number {
   let sum = 0;
   for (let i = 0; i < data.length; i++) sum += data[i] * data[i];

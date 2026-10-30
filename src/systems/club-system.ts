@@ -5,6 +5,7 @@ import { ClubRoom, ConsoleRoot } from '../console-components.js';
 import { CEILING_BARS, CEILING_SEGMENTS, DRIVERS, LED_COLS, LED_ROWS, POOLS } from '../scene-assets/club.scene-asset.js';
 import { RIG_HEADS } from '../scene-assets/light-rig.scene-asset.js';
 import { club } from '../show/club-state.js';
+import { lights } from '../show/light-state.js';
 import { newShowFrame, readShow } from '../show/show-clock.js';
 import type { ShowFrame } from '../show/show-clock.js';
 
@@ -48,7 +49,6 @@ export class ClubSystem extends createSystem({
   private driverBase!: Float32Array;
   private rig: Object3D | null = null;
   private tilts: Object3D[] = [];
-  private beams: Mesh[] = [];
   private show!: ShowFrame;
   private time = 0;
   private applied = false;
@@ -234,7 +234,6 @@ export class ClubSystem extends createSystem({
       if (this.rig == null) return;
       for (let i = 0; i < RIG_HEADS; i++) {
         this.tilts.push(this.rig.getObjectByName(`Tilt${i}`)!);
-        this.beams.push(this.rig.getObjectByName(`Beam${i}`) as Mesh);
       }
     }
     this.rig.updateMatrixWorld(true);
@@ -243,7 +242,7 @@ export class ClubSystem extends createSystem({
       const e = this.tilts[i].matrixWorld.elements;
       const len = Math.hypot(e[4], e[5], e[6]);
       const dy = -e[5] / len;
-      const colour = (this.beams[i].material as MeshBasicMaterial).color;
+      const colour = this.tint.setRGB(lights.colors[i * 3], lights.colors[i * 3 + 1], lights.colors[i * 3 + 2]);
       if (dy > -0.05) {
         this.dummy.scale.setScalar(0);
       } else {

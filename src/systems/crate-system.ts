@@ -5,10 +5,13 @@ import type { CrateSlot, EngineState } from '../audio/engine.js';
 import { ConsoleRoot } from '../console-components.js';
 import { notice } from '../share.js';
 
-const SLOT = { w: 352, h: 80 };
+const SLOT = { w: 260, h: 84 };
 const STATUS = { w: 288, h: 86 };
 const DECK_COLORS = { A: '#29D7FF', B: '#FF3DA8' };
 const GREEN = '#3DFF6E';
+const AMBER = '#FFB020';
+const GREY = '#7B8494';
+const BADGE_COLORS = { green: GREEN, amber: AMBER, grey: GREY };
 
 interface Face {
   ctx: CanvasRenderingContext2D;
@@ -48,7 +51,7 @@ export class CrateSystem extends createSystem({
   }
 
   private attach(root: { getObjectByName(name: string): unknown }): void {
-    const meshes = [0, 1, 2, 3].map((i) => root.getObjectByName(`CrateScreen${i}`) as Mesh | undefined);
+    const meshes = [0, 1, 2, 3, 4, 5].map((i) => root.getObjectByName(`CrateScreen${i}`) as Mesh | undefined);
     const status = root.getObjectByName('CrateStatus') as Mesh | undefined;
     if (meshes.some((m) => m == null) || status == null) return;
     this.slots = meshes.map((m) => this.face(m!, SLOT.w, SLOT.h));
@@ -71,45 +74,55 @@ export class CrateSystem extends createSystem({
   }
 
   private drawSlot(face: Face, slot: CrateSlot): void {
-    const key = `${slot.onA}${slot.onB}${slot.match}`;
+    const key = `${slot.onA}${slot.onB}${slot.badge}${slot.ratio}`;
     if (key === face.key) return;
     face.key = key;
     const { ctx, w, h } = face;
+    const badge = slot.badge === '' ? null : BADGE_COLORS[slot.badge];
     ctx.fillStyle = '#04070C';
     ctx.fillRect(0, 0, w, h);
-    if (slot.match) {
-      ctx.strokeStyle = GREEN;
-      ctx.lineWidth = 6;
-      ctx.strokeRect(3, 3, w - 6, h - 6);
+    if (badge != null) {
+      ctx.strokeStyle = badge;
+      ctx.lineWidth = 5;
+      ctx.strokeRect(2.5, 2.5, w - 5, h - 5);
     }
     ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
-    ctx.font = 'bold 30px sans-serif';
+    ctx.font = 'bold 23px sans-serif';
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillText(slot.name.toUpperCase(), 12, 33);
+    ctx.fillText(slot.name.toUpperCase(), 10, 29);
     // which deck holds it
-    ctx.font = 'bold 22px sans-serif';
+    ctx.font = 'bold 18px sans-serif';
     ctx.textAlign = 'center';
-    let x = w - 22;
+    let x = w - 20;
     for (const [id, on] of [['B', slot.onB], ['A', slot.onA]] as const) {
       if (!on) continue;
       ctx.fillStyle = DECK_COLORS[id];
-      ctx.fillRect(x - 15, 9, 30, 30);
+      ctx.fillRect(x - 11, 33, 22, 22);
       ctx.fillStyle = '#04070C';
-      ctx.fillText(id, x, 32);
-      x -= 36;
+      ctx.fillText(id, x, 50);
+      x -= 28;
     }
     ctx.textAlign = 'left';
-    ctx.font = 'bold 28px sans-serif';
+    ctx.font = 'bold 22px sans-serif';
     ctx.fillStyle = '#C9D1DC';
-    ctx.fillText(`${slot.bpm} BPM`, 12, 69);
-    // Camelot key badge: green when the track mixes with the playing deck
-    const bw = 84;
-    ctx.fillStyle = slot.match ? GREEN : '#2A3344';
-    ctx.fillRect(w - bw - 12, 44, bw, 30);
-    ctx.fillStyle = slot.match ? '#04120A' : '#FFFFFF';
+    ctx.fillText(`${slot.bpm}`, 10, 74);
+    // double / half time over the playing deck (Airlock over Rainy Tape): a tag next to the BPM
+    if (slot.ratio !== '') {
+      const label = slot.ratio === '2x' ? '2×' : '½×';
+      ctx.fillStyle = AMBER;
+      ctx.fillRect(58, 56, 44, 24);
+      ctx.fillStyle = '#04120A';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, 80, 74);
+    }
+    // Camelot key badge: green / amber / grey against the playing deck
+    const bw = 60;
+    ctx.fillStyle = badge ?? '#2A3344';
+    ctx.fillRect(w - bw - 10, 58, bw, 22);
+    ctx.fillStyle = badge != null ? '#04120A' : '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText(slot.key, w - bw / 2 - 12, 68);
+    ctx.fillText(slot.key, w - bw / 2 - 10, 76);
     face.texture.needsUpdate = true;
   }
 

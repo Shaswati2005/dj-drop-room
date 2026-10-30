@@ -34,7 +34,7 @@ export default async function run({ page, frame }) {
   // channel fader
   const base = await level('A');
   await e(() => window.__dropRoom.engine().setFader('A', 0));
-  await wait(400); // let the meter fall
+  await wait(900); // let the meter fall (it releases with a 0.15 s time constant)
   const faded = await level('A', 600);
   check('channel fader down silences channel A', faded < base * 0.05, pct(base, faded));
   await e(() => window.__dropRoom.engine().setFader('A', 1));
@@ -81,7 +81,7 @@ export default async function run({ page, frame }) {
 
   // ECHO: pausing with echo on leaves a tail
   await e(() => window.__dropRoom.engine().toggleEcho());
-  await wait(1500);
+  await wait(2800);
   await e(() => window.__dropRoom.engine().togglePlay('A'));
   await wait(150);
   const tail = await level('master', 500);

@@ -3,7 +3,7 @@
 // player would (poke, press-and-slide, pinch-drag, pinch-twist) and check that
 // each one changes the engine. Deck A is worked with the left hand, deck B and
 // the centre with the right.
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 
 const cwd = process.argv[2] ?? process.cwd();
@@ -146,11 +146,23 @@ for (const deck of ['A', 'B']) {
 }
 
 // ── FX, crossfader ends, DROP ──
+// ECHO and SPACE are hold pads (day 11): lit while the finger stays down, off on release
 for (const fx of ['Fx Echo', 'Fx Space']) {
-  press(fx);
-  const on = until(() => lit(fx));
-  press(fx);
-  check(`${fx.slice(3).toUpperCase()} turns on and off`, on && until(() => !lit(fx)));
+  const child = spawn('npx', ['@iwsdk/cli', 'xr', 'run-sequence', '--input-json', q({
+    device: handFor(fx),
+    // press.hold is capped at 0.2 s: a long hold is a fingertip 8 mm into the pad, left there
+    steps: [
+      { label: fx, target: { name: fx, face: 'top' }, anchor: 'index-tip', poseId: 'point', approach: { distance: 0.05 }, offset: { normal: -0.008 } },
+      { label: 'hold', duration: 6 },
+      { label: 'rest', anchor: 'wrist', position: { relativeTo: 'head', ...REST[handFor(fx)] }, depart: { distance: 0.06 } },
+    ],
+  }), '--raw', '--timeout', '60000'], { cwd, shell: 'bash', stdio: 'ignore' });
+  const on = until(() => lit(fx), 10);
+  // the press ends after ~6 s; the child cannot be awaited while the loop is blocked, so wait it out
+  const off = until(() => !lit(fx), 20);
+  sleep(2);
+  child.kill();
+  check(`${fx.slice(3).toUpperCase()} lights while held and goes dark on release`, on && off);
 }
 press('Xf End B');
 check('crossfader B-end glides to deck B', until(() => music().crossfader > 0.95, 10), `x = ${music().crossfader.toFixed(2)}`);

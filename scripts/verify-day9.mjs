@@ -17,7 +17,7 @@ export default async function run({ page, frame }) {
   // ---- tracks 3 and 4 -------------------------------------------------------
   const tracks = [
     { id: 'mirrorball', bpm: 120, bars: 72 },
-    { id: 'rainy-tape', bpm: 116, bars: 72 },
+    { id: 'rainy-tape', bpm: 86, bars: 72 },
   ];
   for (const t of tracks) {
     await app.evaluate((id) => window.__dropRoom.engine().loadTrack('B', id), t.id);
@@ -52,8 +52,8 @@ export default async function run({ page, frame }) {
   // ---- crate: badges, loading, refusing a playing deck -----------------------
   // (A plays Warm Start, B is parked on Rainy Tape)
   const crate = await app.evaluate(() => window.__dropRoom.crate());
-  check('crate lists the 4 tracks with BPM and Camelot key', crate.map((c) => `${c.name} ${c.bpm} ${c.key}`).join(' | ') === 'Warm Start 124 8A | Concrete 128 8A | Mirrorball 120 9A | Rainy Tape 116 8B', crate.map((c) => c.key).join(','));
-  check('badges match against the playing deck: key +-1 and tempo +-6 %', crate.map((c) => c.match).join() === 'false,true,true,false', crate.map((c) => c.match).join());
+  check('crate lists the 6 tracks with BPM and Camelot key', crate.map((c) => `${c.name} ${c.bpm} ${c.key}`).join(' | ') === 'Warm Start 124 8A | Concrete 128 8A | Mirrorball 120 9A | Rainy Tape 86 8B | Airlock 172 9A | Sunrise 124 8B', crate.map((c) => c.key).join(','));
+  check('badges match against the playing deck: key +-1 and tempo +-6 %', crate.map((c) => c.match).join() === 'false,true,true,false,false,true', crate.map((c) => c.match).join());
   check('badges show which deck holds a track', crate[3].onB && crate[0].onA && !crate[1].onA && !crate[1].onB);
   let r = await app.evaluate(() => window.__dropRoom.engine().requestLoad('A', 'concrete'));
   await wait(300);

@@ -98,7 +98,7 @@ function mixer(): Object3D {
 }
 
 /** The crate shelf: a plate behind the chassis with a screen per slot
- * (CrateScreen0-3, CrateStatus: textured by CrateSystem). */
+ * (CrateScreen0-5, CrateStatus: textured by CrateSystem). */
 function crate(): Object3D {
   const g = new Group();
   g.name = 'Crate';

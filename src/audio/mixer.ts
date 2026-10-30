@@ -1,4 +1,5 @@
 import * as Tone from 'tone';
+import { ECHO_FEEDBACK, echoDelaySeconds, FX_PEAK, FX_RELEASE } from './quantise.js';
 
 export type Band = 'low' | 'mid' | 'high';
 export const BANDS: readonly Band[] = ['low', 'mid', 'high'];
@@ -95,42 +96,92 @@ export class Channel {
   }
 }
 
-/** Beat FX on the master: ECHO (a 3/4-beat delay) and SPACE (reverb), fed by
- * a send from every channel. Turning one off lets its tail ring out. */
+/**
+ * Beat FX on the master (PLAN 3.9): ECHO (feedback delay, dotted 1/8, HPF on
+ * the return) and SPACE (reverb), each fed by a send from the channels. While
+ * a pad is held its send ramps 0 to FX_PEAK from the next 1/8 note; on release
+ * the send shuts and the tail rings out through the delay's feedback / the
+ * reverb decay (about 2 bars). The returns go into the master bus, so the
+ * recorder and the limiter hear them.
+ */
 export class MasterFx {
   readonly input: Tone.Gain;
+  /** a pad is held (or armed for the next 1/8) */
   echo = false;
   space = false;
   private readonly echoSend: Tone.Gain;
   private readonly spaceSend: Tone.Gain;
   private readonly delay: Tone.FeedbackDelay;
   private readonly reverb: Tone.Reverb;
+  private readonly returnHp: Tone.Filter;
+  private readonly echoMeter: LevelMeter;
+  private readonly spaceMeter: LevelMeter;
 
-  constructor(context: Tone.BaseContext, destination: Tone.InputNode) {
+  constructor(private readonly context: Tone.BaseContext, destination: Tone.InputNode) {
     this.input = new Tone.Gain({ context });
     this.echoSend = new Tone.Gain({ context, gain: 0 });
     this.spaceSend = new Tone.Gain({ context, gain: 0 });
-    this.delay = new Tone.FeedbackDelay({ context, delayTime: 0.36, feedback: 0.45, wet: 1, maxDelay: 2 });
+    this.delay = new Tone.FeedbackDelay({ context, delayTime: echoDelaySeconds(124), feedback: ECHO_FEEDBACK, wet: 1, maxDelay: 2 });
     this.reverb = new Tone.Reverb({ context, decay: 4.5, preDelay: 0.02, wet: 1 });
-    const hp = new Tone.Filter({ context, type: 'highpass', frequency: 300 });
+    this.returnHp = new Tone.Filter({ context, type: 'highpass', frequency: 300 });
+    this.echoMeter = new LevelMeter(context);
+    this.spaceMeter = new LevelMeter(context);
     this.input.fan(this.echoSend, this.spaceSend);
-    this.echoSend.chain(hp, this.delay, destination);
+    this.echoSend.chain(this.delay, this.returnHp, destination);
     this.spaceSend.chain(this.reverb, destination);
+    // what the two returns are putting out, so the tails can be seen (and tested)
+    this.returnHp.connect(this.echoMeter.input);
+    this.reverb.connect(this.spaceMeter.input);
   }
 
-  toggleEcho(bpm: number): void {
-    this.echo = !this.echo;
-    this.delay.delayTime.rampTo((0.75 * 60) / bpm, 0.05);
-    this.echoSend.gain.rampTo(this.echo ? 0.55 : 0, 0.05);
+  /** Level of the echo / reverb return (0..1): the tail keeps showing after the pad is released. */
+  get echoOut(): number {
+    return this.echoMeter.level;
   }
 
-  toggleSpace(): void {
-    this.space = !this.space;
-    this.spaceSend.gain.rampTo(this.space ? 0.6 : 0, 0.08);
+  get spaceOut(): number {
+    return this.spaceMeter.level;
+  }
+
+  /** Current send levels (0..FX_PEAK) as heard from the audio clock. */
+  get echoWet(): number {
+    return this.echoSend.gain.value;
+  }
+
+  get spaceWet(): number {
+    return this.spaceSend.gain.value;
+  }
+
+  /** Press: ramp the send up from `startAt` over `ramp` seconds. */
+  hold(kind: 'echo' | 'space', startAt: number, ramp: number, bpm: number): void {
+    if (kind === 'echo') this.delay.delayTime.setValueAtTime(echoDelaySeconds(bpm), startAt);
+    const param = kind === 'echo' ? this.echoSend.gain : this.spaceSend.gain;
+    const now = this.context.currentTime;
+    const from = Math.max(now, startAt);
+    const current = param.getValueAtTime(now);
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(current, now);
+    param.setValueAtTime(0, from);
+    param.linearRampToValueAtTime(FX_PEAK, from + ramp);
+    this[kind] = true;
+  }
+
+  /** Release: the send shuts at once; whatever is already in the delay line
+   * or reverb keeps ringing. Also cancels a start that has not happened yet. */
+  release(kind: 'echo' | 'space'): void {
+    const param = kind === 'echo' ? this.echoSend.gain : this.spaceSend.gain;
+    const now = this.context.currentTime;
+    const current = param.getValueAtTime(now);
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(current, now);
+    param.linearRampToValueAtTime(0, now + FX_RELEASE);
+    this[kind] = false;
   }
 
   dispose(): void {
-    for (const node of [this.input, this.echoSend, this.spaceSend, this.delay, this.reverb]) node.dispose();
+    for (const node of [this.input, this.echoSend, this.spaceSend, this.delay, this.reverb, this.returnHp]) node.dispose();
+    this.echoMeter.dispose();
+    this.spaceMeter.dispose();
   }
 }
 

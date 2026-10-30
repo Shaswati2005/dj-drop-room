@@ -3,12 +3,14 @@ import { Deck, HOT_CUES, LOOP_BARS, TEMPO_RANGE } from './deck.js';
 import type { DeckId } from './deck.js';
 import { DropFx } from './drop.js';
 import { Master } from './master.js';
+import { FX_RAMP_BEATS, nextEighthAt } from './quantise.js';
 import { MoveLog } from './move-log.js';
 import type { Move } from './move-log.js';
 import { Recorder } from './recorder.js';
 import { Channel, clamp, crossfadeGains, MasterFx } from './mixer.js';
 import type { Band } from './mixer.js';
-import { camelot, mixesWith } from './camelot.js';
+import { badgeFor, camelot, tempoRelation } from './camelot.js';
+import type { Badge } from './camelot.js';
 import { CONCRETE, CRATE_ORDER, TRACKS, WARM_START } from './tracks/catalog.js';
 import { STEMS } from './track-model.js';
 import type { Section, Stem } from './track-model.js';
@@ -71,6 +73,12 @@ export interface EngineState {
   fadingTo: DeckId | '';
   echo: boolean;
   space: boolean;
+  /** send levels 0..0.6 as heard: rise while held, 0 after release */
+  echoWet: number;
+  spaceWet: number;
+  /** what the echo / reverb returns put out, 0..1: still sounding after release (the tail) */
+  echoOut: number;
+  spaceOut: number;
   /** DROP: riser start and landing (audio times, as heard; 0 = none yet) and
    * how many drops have landed */
   dropFrom: number;
@@ -112,6 +120,10 @@ export interface CrateSlot {
   onB: boolean;
   /** key within one Camelot step of the reference deck's, and tempo within ±6 % */
   match: boolean;
+  /** green / amber / grey against the reference deck ('' when there is none or it is this track) */
+  badge: Badge | '';
+  /** '2x' / '1/2x' when the track locks at double / half time over the reference deck */
+  ratio: '' | '2x' | '1/2x';
 }
 
 export type LoadResult = 'loading' | 'refused' | 'unknown';
@@ -174,6 +186,10 @@ export class Engine {
     fadingTo: '',
     echo: false,
     space: false,
+    echoWet: 0,
+    spaceWet: 0,
+    echoOut: 0,
+    spaceOut: 0,
     dropFrom: 0,
     dropAt: 0,
     drops: 0,
@@ -207,6 +223,8 @@ export class Engine {
     onA: false,
     onB: false,
     match: false,
+    badge: '',
+    ratio: '',
   }));
   private replay: { moves: Move[]; next: number; start: number } | null = null;
   private pendingReplay: Move[] | null = null;
@@ -300,7 +318,12 @@ export class Engine {
     for (const slot of this.crateSlots) {
       slot.onA = this.decks.A.track?.id === slot.trackId;
       slot.onB = this.decks.B.track?.id === slot.trackId;
-      slot.match = ref != null && ref.id !== slot.trackId && mixesWith(TRACKS[slot.trackId], ref);
+      const other = ref != null && ref.id !== slot.trackId ? ref : null;
+      const badge = other == null ? '' : badgeFor(TRACKS[slot.trackId], other);
+      const relation = other == null ? 'lock' : tempoRelation(other.bpm, TRACKS[slot.trackId].bpm);
+      slot.badge = badge;
+      slot.match = badge === 'green';
+      slot.ratio = relation === 'double' ? '2x' : relation === 'half' ? '1/2x' : '';
     }
     return this.crateSlots;
   }
@@ -373,8 +396,8 @@ export class Engine {
       case 'f': this.setFader(deck, (b as number) / 100); break;
       case 'X': this.setCrossfader((a as number) / 100); break;
       case 'e': this.fadeTo(deck); break;
-      case 'E': this.toggleEcho(); break;
-      case 'S': this.toggleSpace(); break;
+      case 'E': if (a === undefined) this.toggleEcho(); else this.holdEcho(a === 1); break;
+      case 'S': if (a === undefined) this.toggleSpace(); else this.holdSpace(a === 1); break;
       case 'D': this.drop(); break;
       case 'T': this.toggleStem(deck, STEMS[b as number] ?? 'drums'); break;
       case 'L': this.requestLoad(deck, String(b)); break;
@@ -533,14 +556,39 @@ export class Engine {
     this.fade = { from: this.crossfader, to, start: this.context.currentTime, seconds: (4 * 240) / bpm };
   }
 
+  /** ECHO / SPACE pad pressed (`down`) or released (PLAN 3.9): while held the
+   * send ramps up from the next 1/8 note of the master deck; on release the
+   * tail rings out. Logged so a share link and REC replay it. */
+  holdEcho(down: boolean): void {
+    this.holdFx('echo', down);
+  }
+
+  holdSpace(down: boolean): void {
+    this.holdFx('space', down);
+  }
+
+  private holdFx(kind: 'echo' | 'space', down: boolean): void {
+    this.note(kind === 'echo' ? 'E' : 'S', down ? 1 : 0);
+    if (!down) {
+      this.fx.release(kind);
+      return;
+    }
+    if (this.fx[kind]) return;
+    const deck = this.masterDeck();
+    const now = this.context.currentTime;
+    const bpm = deck.bpm || WARM_START.bpm;
+    let at = now;
+    if (deck.isRunning) at = nextEighthAt(now, deck.nextBarTime(now), 30 / bpm);
+    this.fx.hold(kind, at, (FX_RAMP_BEATS * 60) / bpm, bpm);
+  }
+
+  /** Old toggle API (share links from before day 11 log a bare E / S). */
   toggleEcho(): void {
-    this.note('E');
-    this.fx.toggleEcho(this.masterDeck().bpm || WARM_START.bpm);
+    this.holdFx('echo', !this.fx.echo);
   }
 
   toggleSpace(): void {
-    this.note('S');
-    this.fx.toggleSpace();
+    this.holdFx('space', !this.fx.space);
   }
 
   /** DROP (PLAN §3.5) on the master deck: a riser now; drums and bass gap on
@@ -593,6 +641,10 @@ export class Engine {
     s.fadingTo = this.fade == null ? '' : this.fade.to < 0 ? 'A' : 'B';
     s.echo = this.fx.echo;
     s.space = this.fx.space;
+    s.echoWet = this.fx.echoWet;
+    s.spaceWet = this.fx.spaceWet;
+    s.echoOut = this.fx.echoOut;
+    s.spaceOut = this.fx.spaceOut;
     s.heard = heard;
     s.recording = this.recorder.recording;
     s.recSeconds = this.recorder.seconds;
