@@ -1,0 +1,132 @@
+{
+  "id": "04-mix",
+  "title": "Crate pick, deck B, crossfader B end: a four-bar fade with the bass swap",
+  "timing": "0:50-1:15",
+  "device": "metaQuest3",
+  "setup": [
+    "reset",
+    "enter",
+    "unmute",
+    "music",
+    "wait:6"
+  ],
+  "steps": [
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Load Mirrorball B",
+            "target": {
+              "name": "Load Mirrorball B",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "mirrorballOnB",
+      "timeout": 15
+    },
+    {
+      "wait": 1
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Play B",
+            "target": {
+              "name": "Play B",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 4
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Xf End B",
+            "target": {
+              "name": "Xf End B",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "faded",
+      "timeout": 30
+    },
+    {
+      "wait": 2
+    }
+  ],
+  "expect": "mixed"
+}

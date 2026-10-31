@@ -1,0 +1,275 @@
+{
+  "id": "06-genre-tour",
+  "title": "Genre tour on bar cuts: Concrete (techno) then Rainy Tape (lo-fi) over Mirrorball",
+  "timing": "1:40-1:55",
+  "device": "metaQuest3",
+  "setup": [
+    "reset",
+    "enter",
+    "unmute",
+    "onair-mirrorball-b",
+    "wait:4"
+  ],
+  "steps": [
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Load Concrete A",
+            "target": {
+              "name": "Load Concrete A",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "concreteOnA",
+      "timeout": 15
+    },
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Play A",
+            "target": {
+              "name": "Play A",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 2
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Xf End A",
+            "target": {
+              "name": "Xf End A",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "crossfaderA",
+      "timeout": 30
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Play B",
+            "target": {
+              "name": "Play B",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 2
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Load Rainy Tape B",
+            "target": {
+              "name": "Load Rainy Tape B",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "rainyOnB",
+      "timeout": 15
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Play B",
+            "target": {
+              "name": "Play B",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 2
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Xf End B",
+            "target": {
+              "name": "Xf End B",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "faded",
+      "timeout": 30
+    },
+    {
+      "wait": 3
+    }
+  ],
+  "expect": "tour"
+}

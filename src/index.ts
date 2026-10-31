@@ -18,6 +18,8 @@ import { JogWheelSystem } from './systems/jog-wheel-system.js';
 import { MeterSystem } from './systems/meter-system.js';
 import { MixerControlSystem } from './systems/mixer-control-system.js';
 import { PadFeedbackSystem } from './systems/pad-feedback-system.js';
+import { setClub } from './show/club-state.js';
+import { arSupported } from './xr-support.js';
 import { installSetTools, queueSharedSet, setPresentingProbe } from './share.js';
 
 // Any user gesture may resume audio: page clicks and keys, and XR selects
@@ -61,4 +63,8 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   });
   setPresentingProbe(() => world.renderer.xr.isPresenting);
   installDebugApi(world);
+  // no mixed reality here (a desktop browser, a failed session): show the club on the flat page
+  void arSupported(navigator.xr).then((ok) => {
+    if (!ok) setClub(true);
+  });
 });

@@ -1,0 +1,55 @@
+{
+  "id": "08b-glasses",
+  "title": "Meta VR Glasses view: ray + pinch from a far hand presses a pad and DROP (the black mask is the 74 x 68 degree view)",
+  "timing": "2:15-2:22",
+  "device": "metaVRGlasses",
+  "setup": [
+    "reset",
+    "enter",
+    "unmute",
+    "music",
+    "wait:8",
+    "glasses-pose"
+  ],
+  "steps": [
+    {
+      "ray": {
+        "name": "Pad A Bass",
+        "hand": "hand-right"
+      }
+    },
+    {
+      "wait": 1.2
+    },
+    {
+      "pinch": {
+        "hand": "hand-right"
+      }
+    },
+    {
+      "wait": 3
+    },
+    {
+      "ray": {
+        "name": "Drop",
+        "hand": "hand-right"
+      }
+    },
+    {
+      "wait": 1.2
+    },
+    {
+      "pinch": {
+        "hand": "hand-right"
+      }
+    },
+    {
+      "waitFor": "dropLanded",
+      "timeout": 20
+    },
+    {
+      "wait": 4
+    }
+  ],
+  "expect": "glasses"
+}

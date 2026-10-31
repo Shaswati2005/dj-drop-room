@@ -1,0 +1,64 @@
+// Soak test (node scripts/soak.mjs [minutes]; default 10). NOT part of verify-everything.
+// Plays an automated set on a fresh page for the given time: every cycle loads the next track on
+// the off-air deck, brings it in on the bar, plays stems / loop / roll / filter, holds ECHO and
+// SPACE, DROPs, A/B-fades across and retires the old deck; every third cycle also runs
+// Finish Set -> Play again. After every cycle the JS heap is read after a forced GC.
+// Asserts: heap growth (last sample vs the sample after cycle 1) <= 50 MB, live audio sources
+// stay bounded and do not grow, GPU resources stay attributable to the scene and the scene does
+// not grow, and the console has no errors and no unknown warnings (browser_get_console_logs).
+import { cli, fresh, makeChecker, probe } from './probes/day13-lib.mjs';
+
+const minutes = Number(process.argv[2] ?? 10);
+const { check } = makeChecker();
+const KNOWN_WARNINGS = [/THREE\.Clock: This module has been deprecated/, /Can't change size while VR device is presenting/];
+const bad = [];
+let logsSeen = 0;
+function sweepLogs(since) {
+  const j = cli('browser logs', { count: 200 });
+  const list = Array.isArray(j) ? j : (j.data?.logs ?? []);
+  logsSeen = Math.max(logsSeen, list.length);
+  for (const l of list) {
+    if (l.timestamp < since || bad.some((b) => b.timestamp === l.timestamp && b.message === l.message)) continue;
+    if (l.level === 'error' || ((l.level === 'warn' || l.level === 'warning') && !KNOWN_WARNINGS.some((re) => re.test(l.message)))) bad.push(l);
+  }
+}
+
+fresh();
+// Every `browser run` costs the page a little heap by itself (about 1-2 MB per call, measured below
+// with no app activity at all), so calibrate that harness drift first and report growth both raw
+// and with it removed.
+const calibration = [];
+for (let i = 0; i < 8; i++) calibration.push(probe('scripts/probes/day13-heap.mjs', 60000).heapMB);
+const drift = (calibration[calibration.length - 1] - calibration[0]) / (calibration.length - 1);
+console.log(`harness drift with the app idle: ${calibration.join(' ')} MB => ${drift.toFixed(2)} MB per browser run`);
+const t0 = Date.now();
+const since = t0 - 1000;
+const samples = [];
+while (Date.now() - t0 < minutes * 60000) {
+  const c = probe('scripts/probes/day13-cycle.mjs');
+  samples.push({ cycle: c.cycle, t: Math.round((Date.now() - t0) / 1000), heap: c.gcHeapMB, live: c.liveSources, peak: c.peakLiveSources, geos: c.geometries, texs: c.textures, sceneGeos: c.sceneGeometries, sceneTexs: c.sceneTextures, nodes: c.nodesCreatedThisCycle, finished: c.finished });
+  const s = samples[samples.length - 1];
+  console.log(`t=${String(s.t).padStart(4)} s  cycle ${String(s.cycle).padStart(2)}  heap(GC) ${s.heap} MB  live sources ${s.live} (peak ${s.peak})  GPU ${s.geos}/${s.sceneGeos} geo ${s.texs}/${s.sceneTexs} tex  nodes ${s.nodes}${s.finished ? '  [finish -> play again]' : ''}`);
+  sweepLogs(since);
+}
+const seconds = Math.round((Date.now() - t0) / 1000);
+const first = samples[0];
+const last = samples[samples.length - 1];
+const maxHeap = Math.max(...samples.map((s) => s.heap));
+console.log(`soak ran ${seconds} s (${(seconds / 60).toFixed(1)} min), ${samples.length} set cycles, ${samples.filter((s) => s.finished).length} Finish Set -> Play again`);
+check(`soak ran at least ${minutes} minutes`, seconds >= minutes * 60, `${seconds} s`);
+const runs = samples.length - 1;
+const corrected = (s) => s.heap - first.heap - drift * (s.cycle - first.cycle);
+const appGrowth = corrected(last);
+const maxCorrected = Math.max(...samples.map(corrected));
+console.log(`heap after forced GC: ${first.heap} -> ${last.heap} MB raw (${(last.heap - first.heap).toFixed(1)} MB); harness drift over ${runs} runs ${(drift * runs).toFixed(1)} MB; app growth ${appGrowth.toFixed(1)} MB; worst single sample ${maxCorrected.toFixed(1)} MB above the first (the longest track loaded)`);
+check('JS heap growth (after forced GC, harness drift removed) <= 50 MB from the first cycle to the last', appGrowth <= 50, `${appGrowth.toFixed(1)} MB over ${(seconds / 60).toFixed(1)} min (raw ${(last.heap - first.heap).toFixed(1)} MB)`);
+// the heap holds the decoded stems of the tracks on the decks (Rainy Tape, at 86 BPM, is the longest and
+// is ~45 MB heavier than the others), so a fair growth check compares the same point of the 6-track
+// rotation: cycle n against cycle n - 6
+const sixBack = samples.map((s, i) => (i >= 6 ? corrected(s) - corrected(samples[i - 6]) : 0));
+const worstSixBack = Math.max(...sixBack);
+check('...and the same point of the track rotation (6 cycles apart) never grows by more than 50 MB', worstSixBack <= 50, `worst ${worstSixBack.toFixed(1)} MB; peak heap ${maxHeap} MB while Rainy Tape (the longest) is loaded`);
+check('live audio sources bounded (<= 24 peak) and flat when idle', samples.every((s) => s.peak <= 24 && s.live === first.live), `peak ${Math.max(...samples.map((s) => s.peak))}, idle ${[...new Set(samples.map((s) => s.live))].join('/')}`);
+check('GPU resources belong to the scene and the scene did not grow', samples.every((s) => s.geos <= s.sceneGeos && s.texs <= s.sceneTexs && s.sceneGeos === first.sceneGeos && s.sceneTexs === first.sceneTexs), `${last.geos}/${last.sceneGeos} geo, ${last.texs}/${last.sceneTexs} tex`);
+check('console: no errors and no unknown warnings over the whole soak (count-only log reads)', bad.length === 0, bad.map((l) => `${l.level}: ${l.message.slice(0, 120)}`).join(' | '));

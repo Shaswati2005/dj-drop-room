@@ -40,3 +40,4 @@ pids/
 
 .mcp.json
 artifacts/
+scripts/probes/_tmp/

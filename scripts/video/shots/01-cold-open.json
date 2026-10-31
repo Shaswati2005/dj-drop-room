@@ -1,0 +1,56 @@
+{
+  "id": "01-cold-open",
+  "title": "Cold open: the first DROP in your room",
+  "timing": "0:00-0:08 (about 10 s of capture; trim to the riser and the landing)",
+  "device": "metaQuest3",
+  "setup": [
+    "reset",
+    "enter",
+    "unmute",
+    "music",
+    "wait:14"
+  ],
+  "steps": [
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Drop",
+            "target": {
+              "name": "Drop",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.1
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "dropLanded",
+      "timeout": 20
+    },
+    {
+      "wait": 5
+    }
+  ],
+  "expect": "dropLanded"
+}

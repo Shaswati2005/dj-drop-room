@@ -1,0 +1,160 @@
+{
+  "id": "03-stems",
+  "title": "Stem pads: bass out, drums out, everything back, every change on the bar",
+  "timing": "0:25-0:50",
+  "device": "metaQuest3",
+  "setup": [
+    "reset",
+    "enter",
+    "unmute",
+    "music",
+    "wait:6"
+  ],
+  "steps": [
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Pad A Bass",
+            "target": {
+              "name": "Pad A Bass",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 4
+    },
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Pad A Drums",
+            "target": {
+              "name": "Pad A Drums",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 4
+    },
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Pad A Bass",
+            "target": {
+              "name": "Pad A Bass",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 2
+    },
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Pad A Drums",
+            "target": {
+              "name": "Pad A Drums",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 4
+    }
+  ],
+  "expect": "stemsBack"
+}

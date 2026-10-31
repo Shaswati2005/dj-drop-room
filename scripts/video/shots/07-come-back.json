@@ -1,0 +1,97 @@
+{
+  "id": "07-come-back",
+  "title": "Come back tomorrow: tonight's request toast, then Finish Set and the card with 'Your best'",
+  "timing": "1:55-2:05 (the toast arrives about 8 bars after the first drop)",
+  "device": "metaQuest3",
+  "setup": [
+    "reset",
+    "seed-best",
+    "enter",
+    "unmute",
+    "music",
+    "wait:8"
+  ],
+  "steps": [
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Drop",
+            "target": {
+              "name": "Drop",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.1
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "requestShown",
+      "timeout": 60
+    },
+    {
+      "wait": 6
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Set Finish",
+            "target": {
+              "name": "Set Finish",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "cardUp",
+      "timeout": 15
+    },
+    {
+      "wait": 6
+    }
+  ],
+  "expect": "cardUp"
+}

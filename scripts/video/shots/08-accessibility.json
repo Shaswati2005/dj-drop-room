@@ -1,0 +1,167 @@
+{
+  "id": "08-accessibility",
+  "title": "One hand only, playable without sound (3 s muted), reduced flash",
+  "timing": "2:05-2:15",
+  "device": "metaQuest3",
+  "setup": [
+    "reset",
+    "enter",
+    "unmute",
+    "music",
+    "wait:8"
+  ],
+  "steps": [
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Pad A Bass",
+            "target": {
+              "name": "Pad A Bass",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 3
+    },
+    {
+      "mute": true
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Set Flash",
+            "target": {
+              "name": "Set Flash",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Pad A Chords",
+            "target": {
+              "name": "Pad A Chords",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 3
+    },
+    {
+      "mute": false
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Drop",
+            "target": {
+              "name": "Drop",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.16
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.16
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "dropLanded",
+      "timeout": 20
+    },
+    {
+      "wait": 4
+    }
+  ],
+  "expect": "accessibility"
+}

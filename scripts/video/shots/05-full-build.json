@@ -1,0 +1,240 @@
+{
+  "id": "05-full-build",
+  "title": "The full build: filter slide, ECHO hold, loop, then DROP and the tier up",
+  "timing": "1:15-1:40",
+  "device": "metaQuest3",
+  "setup": [
+    "reset",
+    "enter",
+    "unmute",
+    "music",
+    "wait:10"
+  ],
+  "steps": [
+    {
+      "slide": {
+        "name": "Filter A",
+        "hand": "hand-left",
+        "dx": -0.015
+      }
+    },
+    {
+      "wait": 3
+    },
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Filter A",
+            "target": {
+              "name": "Filter A",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.14
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.14
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Mode A Loop",
+            "target": {
+              "name": "Mode A Loop",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.14
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.14
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Pad A Bass",
+            "target": {
+              "name": "Pad A Bass",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "wait": 5
+    },
+    {
+      "seq": {
+        "device": "hand-left",
+        "steps": [
+          {
+            "label": "Pad A Bass",
+            "target": {
+              "name": "Pad A Bass",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.05
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": -0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.06
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Fx Echo",
+            "target": {
+              "name": "Fx Echo",
+              "face": "top"
+            },
+            "anchor": "index-tip",
+            "poseId": "point",
+            "approach": {
+              "distance": 0.14
+            },
+            "offset": {
+              "normal": -0.008
+            }
+          },
+          {
+            "label": "hold",
+            "duration": 2.5
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.14
+            }
+          }
+        ]
+      }
+    },
+    {
+      "seq": {
+        "device": "hand-right",
+        "steps": [
+          {
+            "label": "Drop",
+            "target": {
+              "name": "Drop",
+              "face": "top"
+            },
+            "approach": {
+              "distance": 0.1
+            },
+            "press": {
+              "hold": 0.15
+            }
+          },
+          {
+            "label": "rest",
+            "anchor": "wrist",
+            "position": {
+              "relativeTo": "head",
+              "x": 0.35,
+              "y": -0.25,
+              "z": -0.05
+            },
+            "depart": {
+              "distance": 0.1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "waitFor": "dropLanded",
+      "timeout": 20
+    },
+    {
+      "wait": 8
+    }
+  ],
+  "expect": "build"
+}
