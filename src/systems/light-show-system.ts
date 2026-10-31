@@ -2,6 +2,7 @@ import { BackSide, Color, CustomBlending, InstancedMesh, Matrix4, Mesh, MeshBasi
 import type { Entity, Object3D } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
 import { ConsoleRoot, LightRig } from '../console-components.js';
+import { game } from '../game/game-state.js';
 import { CLUB_RIG, club } from '../show/club-state.js';
 import { crowdState } from '../show/crowd-state.js';
 import { FlashGuard } from '../show/flash-guard.js';
@@ -158,6 +159,8 @@ export class LightShowSystem extends createSystem({
       const t = Math.min(1, (s.heard - s.dropAt) / SETTLE);
       dim = maxDim + (settleDim - maxDim) * t;
     }
+    // the room dimmer setting is a constant veil in mixed reality
+    dim = Math.max(dim, game.settings.dim * 0.75);
     // the club's walls already hide the room: no veil
     if (inClub) dim = 0;
     this.domeMaterial.opacity = dim;
@@ -182,7 +185,7 @@ export class LightShowSystem extends createSystem({
     const beatSeconds = 60 / s.bpm;
 
     // hype tier: how many heads are up
-    const tier = crowdState.tier;
+    const tier = crowdState.earnedTier;
     const wanted = BEAMS_BY_TIER[tier] ?? 4;
     lights.tier = tier;
     lights.beamsOn = wanted;

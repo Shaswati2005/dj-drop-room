@@ -103,6 +103,8 @@ const ring = () => {
   return r;
 };
 export const createClubButton = () => iconButton('ClubButton', '#B35CFF', 0.032, 0.022, ring());
+/** Settings tab buttons, one colour each (the colour is the lit glow). */
+export const createSettingButton = (name: string, color: string) => smallButton(name, color, 0.034, 0.02);
 export const createRecButton = () => iconButton('RecButton', '#FF2D2D', 0.032, 0.02, dot());
 export const createShareButton = () => iconButton('ShareButton', '#7C8CFF', 0.032, 0.02, arrow());
 

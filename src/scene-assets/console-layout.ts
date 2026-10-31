@@ -75,5 +75,28 @@ export const CRATE_LAYOUT = {
   status: { x: 0, width: 0.09 },
 };
 
+/**
+ * The settings tab (day 12): a second plate behind the crate shelf, same 60 cm
+ * width, so the console is no wider. A label screen at the back, one poke
+ * button under each label. Metres, console space.
+ */
+export const SETTINGS_LAYOUT = {
+  width: 0.6,
+  z0: -0.285,
+  z1: -0.372,
+  buttonZ: -0.31,
+  screen: { z: -0.347, depth: 0.034, width: 0.56 },
+  /** left to right: help, volume -/+, dimmer -/+, reduced flash, finish set */
+  buttons: [
+    { id: 'help', x: -0.255 },
+    { id: 'vol-down', x: -0.18 },
+    { id: 'vol-up', x: -0.12 },
+    { id: 'dim-down', x: -0.04 },
+    { id: 'dim-up', x: 0.02 },
+    { id: 'flash', x: 0.115 },
+    { id: 'finish', x: 0.25 },
+  ] as const,
+};
+
 /** Mirror a deck-A x onto deck B. */
 export const deckX = (x: number, deck: 'A' | 'B') => (deck === 'A' ? x : -x);

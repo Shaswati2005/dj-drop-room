@@ -11,6 +11,7 @@ import { LightShowSystem } from './systems/light-show-system.js';
 import { SessionSystem } from './systems/session-system.js';
 import { CoachSystem } from './systems/coach-system.js';
 import { ClubSystem } from './systems/club-system.js';
+import { SetSystem } from './systems/set-system.js';
 import { CrateSystem } from './systems/crate-system.js';
 import { CrowdSystem } from './systems/crowd-system.js';
 import { JogWheelSystem } from './systems/jog-wheel-system.js';
@@ -53,6 +54,7 @@ World.create(document.getElementById('scene-container') as HTMLDivElement, proje
   world.registerSystem(ClubSystem);
   world.registerSystem(SessionSystem);
   world.registerSystem(CoachSystem);
+  world.registerSystem(SetSystem);
   world.registerSystem(CrowdSystem);
   world.renderer.xr.addEventListener('sessionstart', () => {
     world.renderer.xr.getSession()?.addEventListener('selectstart', unlockAudio);

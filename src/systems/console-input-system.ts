@@ -3,6 +3,8 @@ import { liveEngine, unlockAudio } from '../audio/live.js';
 import { PAD_MODES } from '../audio/engine.js';
 import { CRATE_ORDER } from '../audio/tracks/catalog.js';
 import { club, setClub } from '../show/club-state.js';
+import { game } from '../game/game-state.js';
+import { playAgain, settingsAction } from '../game/set-flow.js';
 import { offerRecording, shareSet } from '../share.js';
 import type { DeckId } from '../audio/deck.js';
 import { ButtonActions, PerfPad, PushButton } from '../console-components.js';
@@ -50,8 +52,18 @@ export class ConsoleInputSystem extends createSystem({
         if (this.bounced(entity.index)) return;
         const action = entity.getValue(PushButton, 'action');
         if (action === ButtonActions.start) {
+          // after Finish Set the start pad comes back as PLAY AGAIN
+          if (game.finished) {
+            playAgain();
+            return;
+          }
           unlockAudio();
           void engine.start().then(() => engine.click());
+          return;
+        }
+        // the settings tab works before the music starts, too
+        if (settingsAction(action as string)) {
+          engine.click(true);
           return;
         }
         // the club toggle works before the music starts, too

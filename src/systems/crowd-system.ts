@@ -17,6 +17,8 @@ import { liveEngine } from '../audio/live.js';
 import { ConsoleRoot } from '../console-components.js';
 import { ROOM, STACKS } from '../scene-assets/club.scene-asset.js';
 import { club } from '../show/club-state.js';
+import { residentEnergy } from '../game/comeback.js';
+import { game } from '../game/game-state.js';
 import { CrowdEnergy } from '../show/crowd-energy.js';
 import { clubSpots, crowdState, dancerState, tableSpots, tierOf, visibleDancers } from '../show/crowd-state.js';
 import type { Spot } from '../show/crowd-state.js';
@@ -88,6 +90,9 @@ export class CrowdSystem extends createSystem({
   private moods = new Float32Array(CAPACITY);
 
   init(): void {
+    // the resident crowd: arrives at the size of your best set
+    this.crowd.resident = residentEnergy(game.best);
+    this.crowd.energy = this.crowd.resident;
     this.dummy = new Object3D();
     this.at = new Vector3();
     this.forward = new Vector3();
@@ -151,6 +156,7 @@ export class CrowdSystem extends createSystem({
     const energy = crowdState.force ?? musicEnergy;
     crowdState.energy = energy;
     crowdState.tier = tierOf(energy);
+    crowdState.earnedTier = crowdState.force == null ? tierOf(this.crowd.earned) : crowdState.tier;
     if (!s.running && crowdState.force == null) {
       this.root.visible = false;
       crowdState.context = 'none';

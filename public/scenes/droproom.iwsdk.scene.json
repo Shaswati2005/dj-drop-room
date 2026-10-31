@@ -1799,6 +1799,188 @@
             "PokeInteractable": {},
             "RayInteractable": {}
           }
+        },
+        {
+          "id": "set-help",
+          "name": "Set Help",
+          "content": {
+            "type": "asset",
+            "asset": "setting-help"
+          },
+          "transform": {
+            "position": [
+              -0.255,
+              0.05,
+              -0.31
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "help",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "set-vol-down",
+          "name": "Set Vol Down",
+          "content": {
+            "type": "asset",
+            "asset": "setting-vol"
+          },
+          "transform": {
+            "position": [
+              -0.18,
+              0.05,
+              -0.31
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "volDown",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "set-vol-up",
+          "name": "Set Vol Up",
+          "content": {
+            "type": "asset",
+            "asset": "setting-vol"
+          },
+          "transform": {
+            "position": [
+              -0.12,
+              0.05,
+              -0.31
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "volUp",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "set-dim-down",
+          "name": "Set Dim Down",
+          "content": {
+            "type": "asset",
+            "asset": "setting-dim"
+          },
+          "transform": {
+            "position": [
+              -0.04,
+              0.05,
+              -0.31
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "dimDown",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "set-dim-up",
+          "name": "Set Dim Up",
+          "content": {
+            "type": "asset",
+            "asset": "setting-dim"
+          },
+          "transform": {
+            "position": [
+              0.02,
+              0.05,
+              -0.31
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "dimUp",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "set-flash",
+          "name": "Set Flash",
+          "content": {
+            "type": "asset",
+            "asset": "setting-flash"
+          },
+          "transform": {
+            "position": [
+              0.115,
+              0.05,
+              -0.31
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "flash",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
+        },
+        {
+          "id": "set-finish",
+          "name": "Set Finish",
+          "content": {
+            "type": "asset",
+            "asset": "setting-finish"
+          },
+          "transform": {
+            "position": [
+              0.25,
+              0.05,
+              -0.31
+            ]
+          },
+          "components": {
+            "PushButton": {
+              "action": "finish",
+              "deck": "A",
+              "index": 0,
+              "lit": false,
+              "armed": false
+            },
+            "PokeInteractable": {},
+            "RayInteractable": {}
+          }
         }
       ]
     },

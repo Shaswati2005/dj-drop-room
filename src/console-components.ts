@@ -15,6 +15,13 @@ export const ButtonActions = {
   rec: 'rec',
   share: 'share',
   club: 'club',
+  help: 'help',
+  volDown: 'volDown',
+  volUp: 'volUp',
+  dimDown: 'dimDown',
+  dimUp: 'dimUp',
+  flash: 'flash',
+  finish: 'finish',
 } as const;
 export const KnobControls = { trim: 'trim', high: 'high', mid: 'mid', low: 'low', filter: 'filter' } as const;
 export const FaderControls = { channel: 'channel', tempo: 'tempo', crossfader: 'crossfader' } as const;

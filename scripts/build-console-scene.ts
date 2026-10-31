@@ -2,7 +2,7 @@
 // the controls always sit on the body's slots and wells.
 // Run: npx vite-node scripts/build-console-scene.ts
 import { readFileSync, writeFileSync } from 'node:fs';
-import { BODY, CRATE_LAYOUT, DECK, deckX, MIXER, PRESS_HEIGHT, STRIP_X } from '../src/scene-assets/console-layout.js';
+import { BODY, CRATE_LAYOUT, DECK, SETTINGS_LAYOUT, deckX, MIXER, PRESS_HEIGHT, STRIP_X } from '../src/scene-assets/console-layout.js';
 import { CRATE_ORDER } from '../src/audio/tracks/catalog.js';
 
 const SCENE = 'public/scenes/droproom.iwsdk.scene.json';
@@ -111,8 +111,23 @@ function crate(): Node[] {
   return nodes;
 }
 
+/** Settings tab (day 12): HELP, volume, room dimmer, reduced flash, FINISH SET. */
+function settings(): Node[] {
+  const y = BODY.top + PRESS_HEIGHT.small;
+  const asset: Record<string, [string, string]> = {
+    help: ['setting-help', 'help'],
+    'vol-down': ['setting-vol', 'volDown'],
+    'vol-up': ['setting-vol', 'volUp'],
+    'dim-down': ['setting-dim', 'dimDown'],
+    'dim-up': ['setting-dim', 'dimUp'],
+    flash: ['setting-flash', 'flash'],
+    finish: ['setting-finish', 'finish'],
+  };
+  return SETTINGS_LAYOUT.buttons.map((b) => node(`set-${b.id}`, asset[b.id][0], b.x, y, SETTINGS_LAYOUT.buttonZ, button('A', asset[b.id][1])));
+}
+
 const scene = JSON.parse(readFileSync(SCENE, 'utf8'));
 const consoleNode = scene.nodes.find((n: Node) => n.id === 'console');
-consoleNode.children = [...deck('A'), ...deck('B'), ...mixer(), ...crate()];
+consoleNode.children = [...deck('A'), ...deck('B'), ...mixer(), ...crate(), ...settings()];
 writeFileSync(SCENE, JSON.stringify(scene, null, 2) + '\n');
 console.log(`console: ${consoleNode.children.length} controls`);

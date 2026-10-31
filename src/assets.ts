@@ -23,6 +23,7 @@ import {
   createPad,
   createPlayButton,
   createStartPad,
+  createSettingButton,
   createSyncButton,
   createTempoFaderCap,
 } from './scene-assets/console-controls.scene-asset.js';
@@ -51,6 +52,11 @@ export default defineAssets({
   'rec-button': createRecButton(),
   'share-button': createShareButton(),
   'club-button': createClubButton(),
+  'setting-help': createSettingButton('SettingHelp', '#29D7FF'),
+  'setting-vol': createSettingButton('SettingVolume', '#3DFF6E'),
+  'setting-dim': createSettingButton('SettingDimmer', '#FFB020'),
+  'setting-flash': createSettingButton('SettingFlash', '#FFFFFF'),
+  'setting-finish': createSettingButton('SettingFinish', '#FF2D55'),
   'club-room': createClubRoom(),
   'light-rig': createLightRig(),
 });

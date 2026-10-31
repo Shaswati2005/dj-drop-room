@@ -18,6 +18,8 @@ export const crowdState = {
   energy: 0.2,
   /** hype tier 0 cold, 1 warm, 2 hot, 3 on fire (PLAN 4.4) */
   tier: 0,
+  /** tier the music itself has earned (the beams follow this; the resident crowd does not raise it) */
+  earnedTier: 0,
   /** how many drawn dancers are in each state: idle, bobbing, dancing, hands up */
   counts: [0, 0, 0, 0],
   /** 1 on a landing drop, falling to 0 over 0.6 s: the jump */

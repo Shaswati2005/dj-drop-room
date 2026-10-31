@@ -4,6 +4,7 @@ import { liveEngine } from '../audio/live.js';
 import { KNOBS, PAD_MODES } from '../audio/engine.js';
 import type { DeckView, EngineState, KnobControl } from '../audio/engine.js';
 import { CRATE_ORDER } from '../audio/tracks/catalog.js';
+import { game } from '../game/game-state.js';
 import { club } from '../show/club-state.js';
 import { ButtonActions, Fader, Knob, MusicState, PerfPad, PushButton } from '../console-components.js';
 
@@ -118,7 +119,7 @@ export class MusicStateMirrorSystem extends createSystem({
     let refused = false;
     switch (action) {
       case ButtonActions.start:
-        lit = !s.running;
+        lit = !s.running || game.finished;
         break;
       // like a DJ media player: PLAY lit while playing, CUE lit while parked, SYNC lit when tempos match
       case ButtonActions.cue:
@@ -155,6 +156,23 @@ export class MusicStateMirrorSystem extends createSystem({
         lit = club.on;
         // once a drop has landed, CLUB pulses: the offer, never forced
         refused = !club.on && s.drops > 0;
+        break;
+      case ButtonActions.flash:
+        lit = game.settings.reducedFlash;
+        break;
+      case ButtonActions.finish:
+        lit = game.finished;
+        break;
+      case ButtonActions.volDown:
+      case ButtonActions.volUp:
+        lit = false;
+        break;
+      case ButtonActions.dimDown:
+      case ButtonActions.dimUp:
+        lit = false;
+        break;
+      case ButtonActions.help:
+        lit = false;
         break;
       case ButtonActions.share:
         lit = false;

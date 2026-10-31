@@ -2,7 +2,8 @@ import { CanvasTexture, createSystem, Mesh, MeshBasicMaterial, PlaneGeometry, Qu
 import type { Entity, Object3D } from '@iwsdk/core';
 import { liveEngine } from '../audio/live.js';
 import type { EngineState } from '../audio/engine.js';
-import { PerfPad, PushButton } from '../console-components.js';
+import { game } from '../game/game-state.js';
+import { Knob, PerfPad, PushButton } from '../console-components.js';
 
 interface Step {
   /** the control the ring goes round (entity name) */
@@ -25,6 +26,8 @@ const STEPS: Step[] = [
 const STORAGE_KEY = 'dropRoom.coached';
 const W = 512;
 const H = 96;
+/** Seconds each tip stays up when HELP replays the tour. */
+const TOUR_SECONDS = 3.5;
 
 /**
  * Coach rings: a pulsing ring round the next control to try, with a short
@@ -35,6 +38,7 @@ const H = 96;
 export class CoachSystem extends createSystem({
   buttons: { required: [PushButton] },
   pads: { required: [PerfPad] },
+  knobs: { required: [Knob] },
 }) {
   /** index of the current step; STEPS.length when coaching is over */
   step = 0;
@@ -43,13 +47,19 @@ export class CoachSystem extends createSystem({
   private label!: Mesh;
   private ctx!: CanvasRenderingContext2D;
   private texture!: CanvasTexture;
-  private drawn = -1;
   private target: Object3D | undefined;
-  private targetStep = -1;
   private at!: Vector3;
   private up!: Vector3;
   private turn!: Quaternion;
   private time = 0;
+  private tourId = 0;
+  private tourStart = -1;
+  private tipId = 0;
+  private tipUntil = 0;
+  private drawnLabel = '';
+  private targetName = '';
+  /** what is shown now, for tests: '' when nothing */
+  shown = '';
 
   init(): void {
     this.at = new Vector3();
@@ -91,27 +101,55 @@ export class CoachSystem extends createSystem({
 
   update(delta: number): void {
     this.time += delta;
-    if (this.step >= STEPS.length) {
+    const s = liveEngine().state;
+    // first-five-minutes coaching advances as the engine shows each step happened
+    if (this.step < STEPS.length) {
+      while (this.step < STEPS.length && STEPS[this.step].done(s)) this.step++;
+      if (this.step >= STEPS.length) this.finish();
+    }
+    // HELP replays the tips one after another (not the Start pad: it is gone by then)
+    if (game.tour.id !== this.tourId) {
+      this.tourId = game.tour.id;
+      this.tourStart = this.time;
+    }
+    // the second-wave and idle tips
+    if (game.tip.id !== this.tipId) {
+      this.tipId = game.tip.id;
+      this.tipUntil = this.time + game.tip.seconds;
+    }
+    let name = '';
+    let label = '';
+    if (this.tourStart >= 0) {
+      const i = 1 + Math.floor((this.time - this.tourStart) / TOUR_SECONDS);
+      if (i < STEPS.length) {
+        name = STEPS[i].target;
+        label = STEPS[i].label;
+      } else this.tourStart = -1;
+    }
+    if (name === '' && this.step >= STEPS.length && this.time < this.tipUntil) {
+      name = game.tip.target;
+      label = game.tip.label;
+    }
+    if (name === '' && this.step < STEPS.length) {
+      name = STEPS[this.step].target;
+      label = STEPS[this.step].label;
+    }
+    this.shown = label;
+    if (name === '' || game.finished) {
       this.ring.visible = this.label.visible = false;
       return;
     }
-    const s = liveEngine().state;
-    while (this.step < STEPS.length && STEPS[this.step].done(s)) this.step++;
-    if (this.step >= STEPS.length) {
-      this.finish();
-      return;
-    }
-    // resolve the control once per step (retried until its asset is in)
-    if (this.targetStep !== this.step || this.target == null) {
-      this.target = this.find(STEPS[this.step].target);
-      this.targetStep = this.step;
+    // resolve the control once per tip (retried until its asset is in)
+    if (this.targetName !== name || this.target == null) {
+      this.target = this.find(name);
+      this.targetName = name;
     }
     const target = this.target;
     if (target == null || target.parent == null) {
       this.ring.visible = this.label.visible = false;
       return;
     }
-    if (this.drawn !== this.step) this.draw(STEPS[this.step].label);
+    if (this.drawnLabel !== label) this.draw(label);
 
     // ring flat on the console round the control, pulsing
     target.getWorldPosition(this.at);
@@ -134,7 +172,7 @@ export class CoachSystem extends createSystem({
   }
 
   private find(name: string): Object3D | undefined {
-    for (const query of [this.queries.buttons, this.queries.pads])
+    for (const query of [this.queries.buttons, this.queries.pads, this.queries.knobs])
       for (const entity of query.entities as Set<Entity>) if (entity.object3D?.name === name) return entity.object3D;
     return undefined;
   }
@@ -145,7 +183,7 @@ export class CoachSystem extends createSystem({
   }
 
   private draw(text: string): void {
-    this.drawn = this.step;
+    this.drawnLabel = text;
     const { ctx } = this;
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = 'rgba(41, 215, 255, 0.92)';

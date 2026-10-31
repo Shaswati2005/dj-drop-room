@@ -1,6 +1,6 @@
 import { BoxGeometry, Color, CylinderGeometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, Object3D as Spot, PlaneGeometry, TorusGeometry } from '@iwsdk/core';
 import type { Material, Object3D } from '@iwsdk/core';
-import { BODY, CRATE_LAYOUT, DECK, deckX, MIXER, MIXER_HALF, STRIP_X } from './console-layout.js';
+import { BODY, CRATE_LAYOUT, SETTINGS_LAYOUT, DECK, deckX, MIXER, MIXER_HALF, STRIP_X } from './console-layout.js';
 import { DECK_COLORS, glow, materials } from './console-materials.js';
 import { bevelBox } from './lib/hardsurface.js';
 
@@ -118,12 +118,28 @@ function crate(): Object3D {
   return g;
 }
 
+/** The settings tab plate behind the crate: one label screen (SettingsScreen, textured by SetSystem). */
+function settingsTab(): Object3D {
+  const g = new Group();
+  g.name = 'SettingsTab';
+  const L = SETTINGS_LAYOUT;
+  const depth = L.z0 - L.z1;
+  const zc = (L.z0 + L.z1) / 2;
+  g.add(mesh('SettingsBase', bevelBox(L.width, T - 0.003, depth, 0.006), materials.body, 0, 0.003 + (T - 0.003) / 2, zc));
+  g.add(mesh('SettingsPlate', bevelBox(L.width - 0.02, 0.0016, depth - 0.012, 0.0006), materials.deckPlate, 0, T + 0.0008, zc));
+  g.add(mesh('SettingsScreenFrame', bevelBox(L.screen.width + 0.006, 0.003, L.screen.depth + 0.004, 0.001), materials.screen, 0, T + 0.0025, L.screen.z));
+  const face = mesh('SettingsScreen', new PlaneGeometry(L.screen.width, L.screen.depth), materials.screen, 0, T + 0.0042, L.screen.z);
+  face.rotation.x = -Math.PI / 2;
+  g.add(face);
+  return g;
+}
+
 export function createConsoleBody(): Group {
   const root = new Group();
   root.name = 'ConsoleBody';
   // the chassis rests on 3 mm feet; its top is exactly T
   const chassis = mesh('Chassis', bevelBox(BODY.width, T - 0.003, BODY.depth, 0.006, 0.018, 4), materials.body, 0, 0.003 + (T - 0.003) / 2, 0);
-  root.add(chassis, deck('A'), deck('B'), mixer(), crate());
+  root.add(chassis, deck('A'), deck('B'), mixer(), crate(), settingsTab());
   const foot = new CylinderGeometry(0.012, 0.012, 0.003, 16);
   for (const [x, z] of [[-0.27, -0.13], [0.27, -0.13], [-0.27, 0.13], [0.27, 0.13]]) {
     root.add(mesh('Foot', foot, materials.rubber, x, 0.0015, z));

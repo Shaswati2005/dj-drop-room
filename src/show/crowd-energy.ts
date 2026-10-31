@@ -12,6 +12,8 @@ const BORED_BARS = 32;
 const BORED = 0.15;
 /** Two basslines at once ("mud", PLAN §1.1 bass swap). */
 const MUD = 0.12;
+/** The resident crowd's floor fades out over this many seconds of playing. */
+const RESIDENT_SECONDS = 45;
 
 /**
  * How hyped the crowd is, 0..1: what they hear sets a target (section, how
@@ -19,7 +21,13 @@ const MUD = 0.12;
  * the energy glides toward it. Pure logic, fed the engine state each frame.
  */
 export class CrowdEnergy {
+  /** what the crowd shows: the earned energy, held up by the resident floor early on */
   energy = 0.2;
+  /** the energy the music has earned, without the resident floor (the beams follow this) */
+  earned = 0.2;
+  /** the come-back kit's resident crowd (PLAN §5.5): arrives at your best tier, fades into the real thing */
+  resident = 0;
+  private ranFor = 0;
   /** what the energy is heading for, for tests */
   target = 0.2;
   private lastChangeTime = 0;
@@ -27,7 +35,11 @@ export class CrowdEnergy {
   private lastDrops = 0;
 
   update(s: EngineState, dt: number): number {
-    if (!s.running) return this.energy;
+    if (!s.running) {
+      this.energy = Math.max(this.earned, this.resident);
+      return this.energy;
+    }
+    this.ranFor += dt;
     const now = s.heard;
     const bar = 240 / s.bpm;
     const deck = s[s.master];
@@ -35,6 +47,12 @@ export class CrowdEnergy {
     // fewer stems, less to dance to
     const stems = deck.stems[0] + deck.stems[1] + deck.stems[2] + deck.stems[3];
     target *= 0.55 + 0.45 * (stems / 4);
+    // a new set (Play again) starts the drop count over
+    if (s.drops < this.lastDrops) {
+      this.lastDrops = s.drops;
+      this.earned = 0.2;
+      this.lastChangeTime = now;
+    }
     if (s.drops > this.lastDrops) {
       this.lastDrops = s.drops;
       this.lastChangeTime = now;
@@ -52,7 +70,8 @@ export class CrowdEnergy {
     }
     if (now - this.lastChangeTime > BORED_BARS * bar) target -= BORED;
     this.target = Math.max(0, Math.min(1, target));
-    this.energy += (this.target - this.energy) * (1 - Math.exp(-dt / RESPONSE));
+    this.earned += (this.target - this.earned) * (1 - Math.exp(-dt / RESPONSE));
+    this.energy = Math.max(this.earned, this.resident * Math.max(0, 1 - this.ranFor / RESIDENT_SECONDS));
     return this.energy;
   }
 

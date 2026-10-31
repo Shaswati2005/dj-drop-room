@@ -237,6 +237,7 @@ export class Engine {
   private dropFrom = 0;
   private dropAt = 0;
   private dropsScheduled = 0;
+  private endTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly tick = () => {
     const now = this.context.currentTime;
     const heard = this.audibleTime();
@@ -612,6 +613,56 @@ export class Engine {
     this.dropFrom = now;
     this.dropAt = at;
     this.dropsScheduled++;
+  }
+
+  /** Finish Set: the master bus fades out over `seconds` while the crowd
+   * applauds, then both decks stop. The session stays running so the crowd
+   * and the console remain. */
+  endSet(seconds = 3): void {
+    this.master.fadeOut(seconds);
+    this.master.applause();
+    if (this.endTimer != null) clearTimeout(this.endTimer);
+    this.endTimer = setTimeout(() => {
+      this.endTimer = null;
+      const now = this.context.currentTime;
+      for (const id of ['A', 'B'] as const) this.decks[id].pause(now + 0.005, this.audibleTime());
+    }, seconds * 1000);
+  }
+
+  /** Play again: the console goes back to the opening state (Warm Start on A,
+   * Concrete on B, everything neutral) and the set starts over on deck A. */
+  async restartSet(): Promise<void> {
+    if (this.endTimer != null) clearTimeout(this.endTimer);
+    this.endTimer = null;
+    const t0 = this.context.currentTime;
+    for (const id of ['A', 'B'] as const) this.decks[id].pause(t0 + 0.005, this.audibleTime());
+    this.fade = null;
+    if (this.fx.echo) this.holdEcho(false);
+    if (this.fx.space) this.holdSpace(false);
+    await Promise.all([this.decks.A.load(WARM_START), this.decks.B.load(CONCRETE)]);
+    const now = this.context.currentTime;
+    for (const id of ['A', 'B'] as const) {
+      const deck = this.decks[id];
+      const channel = this.channels[id];
+      deck.setRate(1, now);
+      deck.setBend(0, now);
+      deck.allStemsOn(now, this.audibleTime());
+      channel.setTrim(0);
+      channel.setFilter(0);
+      for (const band of ['low', 'mid', 'high'] as const) {
+        channel.setEq(band, 0);
+        if (channel.kills[band]) channel.toggleKill(band);
+      }
+      channel.setFader(1);
+      this.padModes[id] = 'stems';
+    }
+    this.applyCrossfader(0);
+    this.master.restore();
+    this.dropFrom = 0;
+    this.dropAt = 0;
+    this.dropsScheduled = 0;
+    this.log.begin(now);
+    this.decks.A.play(now + 0.05, this.audibleTime());
   }
 
   /** Session paused (headset off, system menu): freeze the audio clock, so

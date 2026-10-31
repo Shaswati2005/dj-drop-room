@@ -28,7 +28,7 @@ const unit = sh('npx vitest run');
 record('unit tests', [/Tests\s+.*failed/.test(unit) || !/Tests\s+.*passed/.test(unit) ? 'FAIL vitest' : 'PASS vitest']);
 record('build', [/built in/.test(sh('npm run build')) ? 'PASS vite build' : 'FAIL vite build']);
 
-for (const name of ['verify-audio', 'verify-decks', 'verify-mixer', 'verify-drop', 'verify-day9', 'verify-day9-share', 'verify-day11', 'verify-day11-show']) {
+for (const name of ['verify-audio', 'verify-decks', 'verify-mixer', 'verify-drop', 'verify-day9', 'verify-day9-share', 'verify-day11', 'verify-day11-show', 'verify-day12', 'verify-day12-set']) {
   fresh();
   const out = sh(`npx @iwsdk/cli browser run scripts/${name}.mjs --timeout 105000 --raw`);
   let text = out;
@@ -40,7 +40,7 @@ for (const name of ['verify-audio', 'verify-decks', 'verify-mixer', 'verify-drop
   const found = lines(text);
   record(name, found.length ? found : [`FAIL no results: ${text.slice(0, 200)}`]);
 }
-for (const name of ['verify-console', 'verify-all-controls', 'verify-coach', 'verify-placement', 'verify-pause', 'verify-crate', 'verify-club', 'verify-day11-hands']) {
+for (const name of ['verify-console', 'verify-all-controls', 'verify-coach', 'verify-placement', 'verify-pause', 'verify-crate', 'verify-club', 'verify-day11-hands', 'verify-day12-hands']) {
   fresh();
   // the every-control sweep takes ~12 minutes of CLI round trips
   const found = lines(sh(`node scripts/${name}.mjs`, 1800000));

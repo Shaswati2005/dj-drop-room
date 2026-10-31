@@ -8,8 +8,8 @@ export const club = {
   /** how many times it has been switched, for tests */
   changes: 0,
   /**
-   * Reduced-flash mode (PLAN §5.2). There is no settings panel yet (Day 12);
-   * until then this flag is the single switch. When true, the drop flash on
+   * Reduced-flash mode (PLAN §5.2), set from the settings tab's FLASH button
+   * (`game.settings.reducedFlash`, persisted) by `applySettings`. When true, the drop flash on
    * the LED wall and blinders is cut to a faint glow. Even when false, flashes
    * are one smooth fade per drop, never a strobe.
    */
