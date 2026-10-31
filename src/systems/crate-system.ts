@@ -109,7 +109,7 @@ export class CrateSystem extends createSystem({
     ctx.fillText(`${slot.bpm}`, 10, 74);
     // double / half time over the playing deck (Airlock over Rainy Tape): a tag next to the BPM
     if (slot.ratio !== '') {
-      const label = slot.ratio === '2x' ? '2×' : '½×';
+      const label = slot.ratio === '2x' ? '2Ã—' : 'Â½Ã—';
       ctx.fillStyle = AMBER;
       ctx.fillRect(58, 56, 44, 24);
       ctx.fillStyle = '#04120A';
