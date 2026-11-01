@@ -77,7 +77,7 @@ export class DeckKit {
       new Tone.PolySynth({
         context,
         voice: Tone.Synth,
-        maxPolyphony: 6,
+        maxPolyphony: 12, // a held 4-note pad plus the previous chord's 1.2 s release (dnb) needs 8
         options: {
           oscillator: { type: 'sawtooth' },
           envelope: dnb ? { attack: 0.25, decay: 0.5, sustain: 0.6, release: 1.2 } : { attack: 0.005, decay: 0.25, sustain: 0.15, release: 0.15 },
