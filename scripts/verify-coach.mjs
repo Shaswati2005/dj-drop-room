@@ -48,7 +48,8 @@ for (const [target, hand, next, label] of steps) {
   check(label, until(() => browser('scripts/probes/coach.mjs').step >= next, 8));
 }
 c = browser('scripts/probes/coach.mjs');
-check('ring gone and the visit remembered', !c.ringVisible && c.stored === '1');
+// the ring may already be back for the after-the-drop tip (Day 12); only a coaching ring counts
+check('ring gone and the visit remembered', (!c.ringVisible || c.tipActive) && c.stored === '1', c.tipActive ? '(ring shows the after-drop tip)' : '');
 run(['browser', 'reload']);
 sleep(14);
 c = browser('scripts/probes/coach.mjs');

@@ -5,10 +5,11 @@ export default async function run({ page, frame }) {
   return JSON.stringify(await app.evaluate(() => {
     const w = window.__dropRoom.world;
     let step = -1;
-    for (const s of w.systems.values()) if (s.constructor.name === 'CoachSystem') step = s.step;
+    let tipActive = false;
+    for (const s of w.systems.values()) if (s.constructor.name === 'CoachSystem') { step = s.step; tipActive = s.time < s.tipUntil; }
     const ring = w.scene.getObjectByName('CoachRing');
     let stored = null;
     try { stored = localStorage.getItem('dropRoom.coached'); } catch {}
-    return { step, ringVisible: ring?.visible ?? false, stored };
+    return { step, ringVisible: ring?.visible ?? false, tipActive, stored };
   }));
 }
