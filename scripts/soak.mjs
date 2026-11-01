@@ -24,11 +24,15 @@ function sweepLogs(since) {
 }
 
 fresh();
-// Every `browser run` costs the page a little heap by itself (about 1-2 MB per call, measured below
-// with no app activity at all), so calibrate that harness drift first and report growth both raw
-// and with it removed.
+// Every `browser run` costs the page heap by itself (the page keeps each evaluated script while
+// DevTools is attached), and the cost grows with the script's size: ~1.4 MB for the small heap
+// probe but ~2.4 MB for the cycle script. So calibrate with the cycle script itself in its no-op
+// mode, then report growth both raw and with that drift removed.
+for (let i = 0; i < 2; i++) probe('scripts/probes/day13-cycle.mjs'); // music running, first loads done
+probe('scripts/probes/day13-noop-on.mjs', 60000);
 const calibration = [];
-for (let i = 0; i < 8; i++) calibration.push(probe('scripts/probes/day13-heap.mjs', 60000).heapMB);
+for (let i = 0; i < 8; i++) calibration.push(probe('scripts/probes/day13-cycle.mjs', 60000).gcHeapMB);
+probe('scripts/probes/day13-noop-off.mjs', 60000);
 const drift = (calibration[calibration.length - 1] - calibration[0]) / (calibration.length - 1);
 console.log(`harness drift with the app idle: ${calibration.join(' ')} MB => ${drift.toFixed(2)} MB per browser run`);
 const t0 = Date.now();

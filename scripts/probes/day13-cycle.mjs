@@ -10,6 +10,8 @@ export default async function run({ page, frame }) {
   if (await button.isVisible()) await button.click();
   await app.waitForFunction(() => { const s = window.__dropRoom.state(); return s.A.playing || s.B.playing; }, null, { timeout: 15000 });
   const result = await app.evaluate(async () => {
+      // calibration mode (soak.mjs): same script, no app work, so its own harness cost can be measured
+      if (window.__noopCycle) return { noop: true };
       const d = window.__dropRoom;
       const en = d.engine();
       const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
