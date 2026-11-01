@@ -80,7 +80,7 @@ export async function decodeMoves(text: string): Promise<Move[]> {
   let json: Uint8Array;
   if (text[0] === 'z') json = await pipe(bytes, new DecompressionStream('deflate-raw'));
   else if (text[0] === 'j') json = bytes;
-  else throw new Error('Not a Drop Room set');
+  else throw new Error('Not a DJ Drop Room set');
   const [version, moves] = JSON.parse(new TextDecoder().decode(json)) as [number, unknown];
   if (version !== VERSION || !Array.isArray(moves) || moves.length > MAX_MOVES) throw new Error('Unsupported set');
   for (const m of moves) {

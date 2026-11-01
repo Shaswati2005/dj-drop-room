@@ -56,11 +56,11 @@ export async function saveRecording(): Promise<'shared' | 'downloaded' | 'none'>
   const recorder = liveEngine().recorder;
   const blob = recorder.blob;
   if (blob == null) return 'none';
-  const name = `drop-room-set.${recorder.extension}`;
+  const name = `dj-drop-room-set.${recorder.extension}`;
   const file = new File([blob], name, { type: blob.type });
   if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: 'My Drop Room set' });
+      await navigator.share({ files: [file], title: 'My DJ Drop Room set' });
       status('Recording shared');
       return 'shared';
     } catch (e) {

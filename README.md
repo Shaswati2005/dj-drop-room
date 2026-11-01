@@ -1,4 +1,6 @@
-# IWSDK App
+# DJ Drop Room
+
+A hands-only mixed-reality DJ app built with the Immersive Web SDK.
 
 This project uses `iwsdk.config.json` for declarative scene, asset, component,
 XR, and emulator configuration. Application systems remain explicit in
