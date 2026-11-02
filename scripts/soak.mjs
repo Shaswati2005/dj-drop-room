@@ -53,16 +53,28 @@ console.log(`soak ran ${seconds} s (${(seconds / 60).toFixed(1)} min), ${samples
 check(`soak ran at least ${minutes} minutes`, seconds >= minutes * 60, `${seconds} s`);
 const runs = samples.length - 1;
 const corrected = (s) => s.heap - first.heap - drift * (s.cycle - first.cycle);
-const appGrowth = corrected(last);
-const maxCorrected = Math.max(...samples.map(corrected));
-console.log(`heap after forced GC: ${first.heap} -> ${last.heap} MB raw (${(last.heap - first.heap).toFixed(1)} MB); harness drift over ${runs} runs ${(drift * runs).toFixed(1)} MB; app growth ${appGrowth.toFixed(1)} MB; worst single sample ${maxCorrected.toFixed(1)} MB above the first (the longest track loaded)`);
-check('JS heap growth (after forced GC, harness drift removed) <= 50 MB from the first cycle to the last', appGrowth <= 50, `${appGrowth.toFixed(1)} MB over ${(seconds / 60).toFixed(1)} min (raw ${(last.heap - first.heap).toFixed(1)} MB)`);
+// A leak raises the heap FLOOR. Single high samples that are gone by the next cycle (seen around
+// Finish Set -> Play again: stopping sources can still hold the old stems when the GC runs) are
+// transients: reported, bounded by the peak check, but not counted as growth. So growth compares
+// floors (the lowest sample of a window), never one sample against another.
+const floor = (list) => Math.min(...list.map(corrected));
+const appGrowth = floor(samples.slice(-6)) - floor(samples.slice(0, 6));
+console.log(`heap after forced GC: ${first.heap} -> ${last.heap} MB raw (${(last.heap - first.heap).toFixed(1)} MB); harness drift over ${runs} runs ${(drift * runs).toFixed(1)} MB; app floor growth ${appGrowth.toFixed(1)} MB`);
+check('JS heap floor growth (after forced GC, harness drift removed) <= 50 MB, first 6 cycles vs last 6', appGrowth <= 50, `${appGrowth.toFixed(1)} MB over ${(seconds / 60).toFixed(1)} min (raw ${(last.heap - first.heap).toFixed(1)} MB)`);
 // the heap holds the decoded stems of the tracks on the decks (Rainy Tape, at 86 BPM, is the longest and
-// is ~45 MB heavier than the others), so a fair growth check compares the same point of the 6-track
-// rotation: cycle n against cycle n - 6
-const sixBack = samples.map((s, i) => (i >= 6 ? corrected(s) - corrected(samples[i - 6]) : 0));
-const worstSixBack = Math.max(...sixBack);
-check('...and the same point of the track rotation (6 cycles apart) never grows by more than 50 MB', worstSixBack <= 50, `worst ${worstSixBack.toFixed(1)} MB; peak heap ${maxHeap} MB while Rainy Tape (the longest) is loaded`);
+// is ~45 MB heavier than the others), so also compare the same point of the 6-track rotation: the floor
+// of each point over the first two rotations against its floor over the last two
+const lateFrom = Math.max(0, Math.floor((samples.length - 12) / 6) * 6);
+let worstPoint = -Infinity;
+for (let p = 0; p < 6; p++) {
+  const early = samples.filter((s, i) => i % 6 === p && i < 12);
+  const late = samples.filter((s, i) => i % 6 === p && i >= lateFrom);
+  if (early.length && late.length) worstPoint = Math.max(worstPoint, floor(late) - floor(early));
+}
+check('...and the floor at the same point of the track rotation (first two rotations vs last two) grows by <= 50 MB', worstPoint <= 50, `worst ${worstPoint.toFixed(1)} MB`);
+const transients = samples.filter((s, i) => i > 0 && i < samples.length - 1 && s.heap - Math.min(samples[i - 1].heap, samples[i + 1].heap) > 100);
+console.log(`transient spikes (> 100 MB above both neighbours, gone by the next cycle): ${transients.length ? transients.map((s) => `cycle ${s.cycle} ${s.heap} MB${s.finished ? ' [finish]' : ''}`).join(', ') : 'none'}`);
+check('peak JS heap <= 900 MB (two decks of decoded stems plus a load in flight)', maxHeap <= 900, `${maxHeap} MB`);
 check('live audio sources bounded (<= 24 peak) and flat when idle', samples.every((s) => s.peak <= 24 && s.live === first.live), `peak ${Math.max(...samples.map((s) => s.peak))}, idle ${[...new Set(samples.map((s) => s.live))].join('/')}`);
 check('GPU resources belong to the scene and the scene did not grow', samples.every((s) => s.geos <= s.sceneGeos && s.texs <= s.sceneTexs && s.sceneGeos === first.sceneGeos && s.sceneTexs === first.sceneTexs), `${last.geos}/${last.sceneGeos} geo, ${last.texs}/${last.sceneTexs} tex`);
 check('console: no errors and no unknown warnings over the whole soak (count-only log reads)', bad.length === 0, bad.map((l) => `${l.level}: ${l.message.slice(0, 120)}`).join(' | '));

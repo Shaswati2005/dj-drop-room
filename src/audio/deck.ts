@@ -131,6 +131,9 @@ export class Deck {
     if (this.isPlaying) this.pause(this.context.currentTime);
     this.status = 'loading';
     this.track = track;
+    // let the old track's decoded stems go now (play() refuses while loading), so the old
+    // and the new track (~100 MB each) are never both held: a lower memory peak on Quest
+    this.buffers = [];
     const raw = this.context.rawContext as AudioContext;
     const audio = await Promise.all(
       STEMS.map(async (stem) => {

@@ -15,17 +15,29 @@ const REST = { 'hand-left': { x: -0.35, y: -0.25, z: -0.05 }, 'hand-right': { x:
 const rest = (hand, lift = 0.06) => ({ label: 'rest', anchor: 'wrist', position: { relativeTo: 'head', ...REST[hand] }, depart: { distance: lift } });
 /** A poke: head turns to the pad, the hand arcs over (minimum-jerk), presses, lifts and rests. */
 // `over` is how far above the pad the hand arcs in (and lifts out), for pads that sit behind other controls
-const press = (name, hand, over = 0.05, hold = 0.15) => ({
-  seq: { device: hand, steps: [{ label: name, target: { name, face: 'top' }, approach: { distance: over }, press: { hold } }, rest(hand, Math.max(0.06, over))] },
-});
-/** A held poke (ECHO / SPACE): the fingertip is put 8 mm into the pad and left there. */
-const hold = (name, hand, seconds, over = 0.05) => ({
+// `via` (optional) routes the hand through a raised point in front of the chest on the way in and
+// out, for controls whose straight path from the hip would cross other controls
+const VIA = { 'hand-left': { x: -0.18, y: -0.18, z: -0.22 }, 'hand-right': { x: 0.18, y: -0.18, z: -0.22 } };
+const viaStep = (hand) => ({ label: 'raise', anchor: 'wrist', position: { relativeTo: 'head', ...VIA[hand] } });
+const press = (name, hand, over = 0.05, hold = 0.15, via = false) => ({
   seq: {
     device: hand,
     steps: [
+      ...(via ? [viaStep(hand)] : []),
+      { label: name, target: { name, face: 'top' }, approach: { distance: over }, press: { hold } },
+      ...(via ? [{ ...viaStep(hand), depart: { distance: Math.max(0.06, over) } }, rest(hand, 0.02)] : [rest(hand, Math.max(0.06, over))]),
+    ],
+  },
+});
+/** A held poke (ECHO / SPACE): the fingertip is put 8 mm into the pad and left there. */
+const hold = (name, hand, seconds, over = 0.05, via = false) => ({
+  seq: {
+    device: hand,
+    steps: [
+      ...(via ? [viaStep(hand)] : []),
       { label: name, target: { name, face: 'top' }, anchor: 'index-tip', poseId: 'point', approach: { distance: over }, offset: { normal: -0.008 } },
       { label: 'hold', duration: seconds },
-      rest(hand, Math.max(0.06, over)),
+      ...(via ? [{ ...viaStep(hand), depart: { distance: Math.max(0.06, over) } }, rest(hand, 0.02)] : [rest(hand, Math.max(0.06, over))]),
     ],
   },
 });
@@ -80,12 +92,12 @@ const shots = [
     steps: [
       { slide: { name: 'Filter A', hand: L, dx: -0.015 } },
       wait(3),
-      press('Filter A', L, 0.14),
-      press('Mode A Loop', L, 0.14),
+      press('Filter A', L, 0.14, 0.15, true),
+      press('Mode A Loop', L, 0.14, 0.15, true),
       press('Pad A Bass', L),
       wait(5),
       press('Pad A Bass', L),
-      hold('Fx Echo', R, 2.5, 0.14),
+      hold('Fx Echo', L, 2.5, 0.05),
       press('Drop', R, 0.1),
       waitFor('dropLanded', 20),
       wait(8),
