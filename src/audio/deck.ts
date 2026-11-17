@@ -5,7 +5,7 @@ import type { Section, Stem, TrackDef } from './track-model.js';
 
 export type DeckId = 'A' | 'B';
 
-/** Tempo fader range, ±8 % like the usual DJ-player default. */
+/** Tempo fader range, ±8 %, the usual DJ-player default. */
 export const TEMPO_RANGE = 0.08;
 /** Loop pad lengths (bars) and roll lengths (beats), PLAN-DJ-UPGRADE §3.2. */
 export const LOOP_BARS = [1, 2, 4, 8] as const;

@@ -30,7 +30,7 @@ interface Screen {
 }
 
 /**
- * The deck screens, like a DJ media player.s: track name, BPM and pad mode on top; a
+ * The deck screens, like a DJ media player's: track name, BPM and pad mode on top; a
  * zoomed waveform scrolling past a fixed playhead (beat ticks, loop region,
  * hot cues); and a whole-track overview with the playhead underneath.
  */

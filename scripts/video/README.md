@@ -1,6 +1,6 @@
 # Demo video shot scripts
 
-One JSON per shot of the PLAN.md section 8 video, adapted to what exists at the Day 12 content freeze (no Pro mode, no separate ROLL pads: loops live in the LOOP pad mode; no left-handed mirror). The video is captured in IWSDK's emulator (IWER), in its synthetic `sunlit_living_room`, with the real in-app audio.
+One JSON per shot of the demo video, adapted to what exists at the Day 12 content freeze (no Pro mode, no separate ROLL pads: loops live in the LOOP pad mode; no left-handed mirror). The video is captured in IWSDK's emulator (IWER), in its synthetic `sunlit_living_room`, with the real in-app audio.
 
 ## Before you record
 

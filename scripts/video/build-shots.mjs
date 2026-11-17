@@ -1,5 +1,5 @@
 // node scripts/video/build-shots.mjs: writes scripts/video/shots/*.json, one file per shot of the
-// PLAN.md section 8 video (adapted to what exists at the Day 12 freeze). Edit here, rebuild, commit
+// demo video (adapted to what exists at the Day 12 freeze). Edit here, rebuild, commit
 // the JSON. Each file is { id, title, timing, device, setup[], steps[], expect }, where every
 // { "seq": ... } step is exactly an `xr run-sequence` input (so it also runs by hand with
 // `npx @iwsdk/cli xr run-sequence --input-json "$(jq -c .steps[0].seq shots/NN.json)"`).
